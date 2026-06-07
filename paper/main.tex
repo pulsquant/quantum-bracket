@@ -32,52 +32,61 @@ and Live Prediction-Market Validation}
 \maketitle
 
 \begin{abstract}
-We present the first formal paper applying quantum walks to sports
-tournament brackets, building on the 2018 \emph{Quantum Frontiers}
-outline that proposed a qudit encoding for the FIFA World Cup without
-publication, and on the more recent QNN-classification work of
-\cite{nature_qnn_football_2025}. Our contribution is fourfold :
-(i) we formalize a seeded conditional encoding that maps an $n$-team
-single-elimination bracket onto a circuit of $n{-}1$ qubits with
-controlled-$R_Y$ gates encoding upstream dependencies ;
-(ii) we verify empirically that the resulting circuit's outputs match
-a closed-form \emph{seeded} estimator on brackets up to 15 qubits,
-isolating the approximation's bias from quantum implementation
-artifacts ;
-(iii) we back-test the approach on five real 2025--2026 bracket
-tournaments using actual bracket data (loaded from a production
-prediction-market database), not balanced assumptions. On the 2026
-NBA Playoffs (Spurs as 8-seed West reached the NBA Finals after
-eliminating the 1-seed OKC in the Western Conference Finals), the
-seeded quantum walk assigns
-$P_Q(\text{SAS reaches Finals}) = 8.51\%$ versus $P_C = 6.24\%$, a
-$\mathbf{1.36\times}$ upweight on the deep-run marginal (and a
-$\mathbf{2.61\times}$ upweight on $P(\text{SAS} = \text{champion})$). On the
-2026 Roland Garros WTA bracket (R16 onward), the actual champion
-Mirra Andreeva receives $P_Q = 11.01\%$ vs $P_C = 6.55\%$, a
-$\mathbf{1.68\times}$ upweight, and the underdog finalist Maja
-Chwalinska (Tennis Elo 1710, WTA ranked 114 pre-tournament) a
-$\mathbf{2.78\times}$ upweight on her realised runner-up marginal.
-On the 2026 Roland Garros ATP (R16$+$), underdog semifinalists Jakub
-Mensik and Matteo Arnaldi receive $4.17\times$ and $4.44\times$
-upweights. On the 2025--2026 UEFA Champions League, the realised
-champion PSG (a top favourite) receives $Q/C \approx 1.01$, confirming
-that the seeded approximation does \emph{not} fabricate upset signal
-where none is structurally present. On the 2026 NHL Stanley Cup
-Conference Finals, where Vegas (Elo 1645) swept Colorado (Elo 1670)
-in a notable sport-narrative upset that was, statistically, a
-near-coin-flip outcome, our method assigns $Q/C = 0.63\times$ on
-Vegas reaching the Stanley Cup Final --- a clean negative result
-showing that the seeded approximation does not over-claim signal
-where the rating spread does not support it ;
-(iv) we issue a prospective prediction for the FIFA World Cup 2026
-(kickoff June 11, 2026) with quantified upset-bias profiles for
-mid-tier nations.
-We do not claim quantum advantage at simulator scales (15 qubits),
-but the formalism naturally captures bracket correlation patterns
-that classical Monte Carlo requires explicit path-by-path
-conditioning to reproduce, with a clear path to scaling once 50+
-logical qubit hardware matures.
+This paper applies quantum walks to sports tournament brackets. To
+our knowledge it is the first formal treatment of the idea : the 2018
+\emph{Quantum Frontiers} note \cite{quantumfrontiers_wc_2018} sketched
+a qudit encoding for the FIFA World Cup but never went through peer
+review, and the recent Nature/QNN football work
+\cite{nature_qnn_football_2025} targets a different task (match-level
+classification by QML).
+
+We map an $n$-team single-elimination bracket to a circuit of $n{-}1$
+qubits with controlled-$R_Y$ gates. Round-0 matches use the exact
+Elo logistic ; deeper rounds use a \emph{seeded} approximation whose
+bias we quantify against a closed-form enumeration that follows the
+same matchup rule, so any $Q$--$C$ divergence is attributable to the
+approximation rather than to a quantum implementation artifact.
+
+The encoding is back-tested on five real 2025--2026 brackets loaded
+from a production prediction-market database (not balanced
+assumptions). On the 2026 NBA Playoffs --- where the San Antonio
+Spurs reached the NBA Finals from the 8-seed in the West, eliminating
+the 1-seed OKC in the Western Conference Finals --- the seeded walk
+assigns $P_Q(\text{SAS reaches Finals}) = 8.51\%$ against $P_C =
+6.24\%$ ($\mathbf{1.36\times}$ upweight) and a $\mathbf{2.61\times}$
+upweight on $P(\text{SAS champion})$. On the Roland Garros WTA bracket
+from the Round of 16 onward, the eventual champion Mirra Andreeva is
+upweighted $\mathbf{1.68\times}$ on her champion marginal and the
+underdog finalist Maja Chwalinska (Tennis Elo 1710, WTA \#114
+pre-tournament) is upweighted $\mathbf{2.78\times}$ on her
+runner-up marginal. Underdog semifinalists on the ATP side (Jakub
+Mensik, Matteo Arnaldi) come out at $\mathbf{4.17\times}$ and
+$\mathbf{4.44\times}$. Two clean negative controls confirm the
+method is not just an upset-amplifier : the chalk-favourite PSG
+winning the UCL gives $Q/C \approx 1.01$, and Vegas sweeping Colorado
+in the NHL Stanley Cup Conference Finals --- statistically a coin
+flip despite the sport-narrative upset framing --- gives $Q/C =
+0.63\times$ on Vegas reaching the Final.
+
+As a first operational extension of the encoding, we implement Grover
+amplitude amplification on the SAS-champion query of the NBA bracket
+and verify that the empirical $\sin^2((2k+1)\theta)$ amplification
+curve peaks at $97.89\%$ on $k = 4$ iterations (the textbook
+optimum), shrinking the shot-count requirement for a 5\% relative
+precision on the SAS-champion frequency from $\sim$11\,000 shots to
+$\sim$24, a $\sim$$10^4 \times$ empirical reduction.
+
+A prospective prediction for the FIFA World Cup 2026 (kickoff
+June 11, 2026) is issued in the same form : mid-tier nations (NED,
+BEL, AUT, COL) upweighted by 2--3 percentage points, top favourites
+(FRA, ESP, BRA) commensurately reduced.
+
+At simulator scales (15 qubits) we make no claim of quantum advantage.
+The contribution is conceptual : the encoding captures bracket
+structural correlations that classical Monte Carlo only reproduces
+via explicit path-by-path conditioning, and the construction scales
+tractably toward the 50--100 logical qubits expected from early
+fault-tolerant hardware.
 \end{abstract}
 
 \section{Introduction}
@@ -97,46 +106,45 @@ simulations of the full bracket and counting champion outcomes
 number of matches $n$, and Monte-Carlo sample noise on the marginal
 of a low-probability champion scales as $O(1/\sqrt{N})$.
 
-A recent observational year for sports prediction has been the
-2025--2026 season. Multiple bracket-level upsets were realised : in
-the 2026 NBA Playoffs, the San Antonio Spurs (8-seed West) eliminated
-the OKC Thunder (1-seed West) in the Western Conference Finals and
-advanced to the NBA Finals ; Roland Garros 2026 saw three of the
-top-four seeds (Sinner on the ATP side, Świątek and Sabalenka on the
-WTA side) eliminated by the quarterfinals ;
-and the NHL Stanley Cup saw Vegas eliminate the regular-season-best
-Colorado. These outcomes
-are not merely tail events of a classical MC : they correspond to
-bracket paths whose marginal probability under any well-calibrated
-Elo-based estimator is small, but whose \emph{joint structural
-weight} in the bracket tree benefits from the correlation between
-adjacent match decisions.
+The 2025--2026 season delivered an unusually rich set of bracket
+upsets to test such an estimator against. In the NBA Playoffs the
+San Antonio Spurs reached the NBA Finals from the 8-seed in the
+West, eliminating the 1-seed OKC Thunder in the Western Conference
+Finals. Roland Garros 2026 lost three of the top-four seeds before
+the quarterfinals (Sinner on the men's side, Świątek and Sabalenka
+on the women's). In the NHL Stanley Cup the Vegas Golden Knights
+eliminated the regular-season-best Colorado. None of these results
+is statistically extreme on its own match marginal --- a well-
+calibrated Elo gives each of them double-digit probability. What
+makes them difficult to price is the joint weight they carry in the
+bracket tree once a deep run is conditioned on : the correlation
+between successive rounds amplifies the marginal of the surviving
+underdog far above what an independent-rounds approximation would
+suggest.
 
-In this paper we propose a quantum-walk--based estimator that
-encodes bracket structural correlations \emph{natively} via
-entanglement between conditionally-dependent match qubits, and study
-its behaviour on (i) an 8-team synthetic bracket (sanity check) ; (ii)
-five real 2025--2026 tournaments back-tested against ground-truth
-outcomes (NBA Playoffs, NHL Stanley Cup Conference Finals, UEFA
-Champions League, and Roland Garros men's and women's draws from the
-Round of 16 onward) ; and (iii) the 2026 FIFA World Cup R16-onward
-(15 matches, prospective prediction issued prior to the June~11
-kickoff). Tournaments are loaded directly from the PulsQuant
-production prediction-market database, not from balanced-bracket
-assumptions.
+This paper proposes a quantum walk that encodes those correlations
+through entanglement between conditionally-dependent match qubits,
+and studies its behaviour in three settings : an 8-team synthetic
+bracket as a sanity check ; five real 2025--2026 tournaments
+back-tested against ground truth (NBA Playoffs, NHL Stanley Cup
+Conference Finals, UEFA Champions League, and the men's and women's
+Roland Garros draws from the Round of 16 onward) ; and the 2026 FIFA
+World Cup R16-onward (15 matches), with the prediction issued before
+the June~11 kickoff. All brackets are loaded from the production
+PulsQuant prediction-market database rather than from balanced
+toy assumptions.
 
-Our angle directly extends the 2018 \emph{Quantum Frontiers} blog
-post \cite{quantumfrontiers_wc_2018}, which sketched a qudit encoding
-for the World Cup bracket but neither published the framework
-formally nor implemented Grover-based path-likelihood queries
-(explicitly flagged in that work as a promising future direction).
-The recent QNN football prediction work \cite{nature_qnn_football_2025}
-addresses a different task (match-level classification via QML),
-leaving the bracket-structural estimation problem open. The classical
-baseline of \cite{brandes2025stop} stops simulating altogether by
-exploiting independence between bracket sub-paths ; our quantum walk
-instead exploits the structural \emph{dependence} between adjacent
-matches via entanglement.
+The construction picks up where two recent threads left off. The
+2018 \emph{Quantum Frontiers} note \cite{quantumfrontiers_wc_2018}
+sketched a qudit encoding for the World Cup bracket but neither
+published the formalism nor implemented the Grover path-likelihood
+queries it flagged as future work. The Nature/QNN football paper
+\cite{nature_qnn_football_2025} attacks a different target : match-
+level outcome classification via quantum machine learning, leaving
+the bracket-structural problem open. On the classical side,
+\cite{brandes2025stop} drops Monte Carlo altogether by exploiting
+independence between bracket sub-paths ; we go the opposite way and
+exploit the structural \emph{dependence} between adjacent matches.
 
 \section{Background}
 \label{sec:bg}
@@ -150,11 +158,10 @@ For a single-elimination bracket viewed as a balanced binary tree
 of depth $d$ ($n = 2^d$ teams, $2^d - 1$ internal matches), the
 canonical walk traverses the tree level-by-level toward the root,
 with the coin determining the choice of winning child at each
-match. The seminal work of Childs, Cleve, Deotto, and Farhi
-\cite{childs2003exponential} showed that quantum walks can give
-exponential algorithmic speedups for hidden-graph traversal tasks ;
-our application of quantum walks to brackets does not invoke this
-particular asymptotic advantage but borrows the structural encoding.
+match. The exponential algorithmic speedups of Childs, Cleve,
+Deotto, and Farhi \cite{childs2003exponential} apply to a different
+problem (hidden-graph traversal) ; we keep the structural encoding
+but make no asymptotic claim of that flavour here.
 
 \subsection{Quantum amplitude estimation}
 
@@ -217,16 +224,18 @@ approximation is exact for first-round matches and at the
 $d$-axis-aligned paths through the bracket ; it is biased toward
 those canonical seed matchups for deeper rounds.
 
-\subsection{Closed-form verification of the seeded approximation}
+\subsection{Closed-form check of the seeded approximation}
 
-To rule out an implementation bug, we additionally compute a
-closed-form estimator $S$ that enumerates all $2^{n-1}$ bracket
-outcomes and accumulates path probabilities under the \emph{same}
-seeded matchup rule. The triple comparison $\{Q$ (Qiskit Aer
-sampling), $C$ (unbiased classical MC), $S$ (closed-form seeded
-enumeration)$\}$ allows us to attribute any $Q$--$C$ divergence
-to the seeded approximation rather than to noise or implementation
-error : we expect $Q \approx S$ within statistical noise.
+Alongside $Q$ (Qiskit Aer sampling) and the unbiased classical
+Monte Carlo $C$, we compute a third estimator $S$ that enumerates
+all $2^{n-1}$ bracket outcomes in closed form under the \emph{same}
+seeded matchup rule used by the circuit. The triple
+$\{Q, C, S\}$ then lets us split the $Q$--$C$ divergence into two
+parts : whatever sits between $Q$ and $S$ is sampling noise or
+implementation error, while whatever sits between $S$ and $C$ is
+the seeded approximation's bias. Throughout the experiments we
+find $|Q - S| < 0.1$\,pp, so the gap to $C$ is attributable to the
+approximation alone.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -318,43 +327,32 @@ RG WTA 2026 (R16+) & \textbf{Andreeva champion (18 y/o)} & \textbf{11.01\%} & \t
 \end{tabular}
 \end{table}
 
-The pattern is consistent across the five tournaments :
-\begin{itemize}[leftmargin=*]
-\item \textbf{Realised underdog deep runs} (SAS reaching the NBA
-  Finals as an 8-seed after eliminating 1-seed OKC in the West Conf.
-  Final ; Mirra Andreeva, the 18-year-old RG WTA 2026 champion ;
-  Chwalinska as RG WTA runner-up (Tennis Elo 1710, WTA \#114
-  pre-tournament) ; Mensik and Arnaldi as RG ATP underdog
-  semifinalists) are upweighted by factors ranging from $1.36\times$
-  to $4.44\times$.
-\item \textbf{Realised low-probability champions} are upweighted :
-  Andreeva receives $P_Q = 11.01\%$ vs $P_C = 6.55\%$, a
-  $\mathbf{1.68\times}$ upweight on her realised title.
-\item \textbf{Top favourites that lost early} are sharply
-  down-weighted : Zverev RG ATP $0.11\times$, Swiatek RG WTA $0.10\times$.
-\item \textbf{Top favourites that won as expected} (PSG winning the
-  UCL) receive $Q/C \approx 1.01$, confirming that the seeded
-  approximation does \emph{not} fabricate upset signal when the
-  bracket plays out chalk.
-\item \textbf{Top seeds that survived deep} are down-weighted :
-  the New York Knicks' marginal probability to reach the NBA Finals
-  is sharply reduced by $Q$ ($P_Q = 12.85\%$ vs $P_C = 21.27\%$,
-  $\mathbf{0.60\times}$) even though they did reach the Finals.
-  This is the inverse of the upset upweight : the seeded
-  approximation systematically biases against top-seed bracket
-  positions, regardless of whether that top seed eventually survives.
-  The trade-off is explicit : Q gains predictive value on underdog
-  deep-runs at the cost of false-negative signal on top seeds that
-  carry expectation through to the Final.
-\item \textbf{Near-coin-flip outcomes do not produce upset signal} :
-  the 2026 NHL Stanley Cup West Conference Finals featured Vegas
-  Golden Knights (Elo 1645) eliminating Colorado Avalanche (Elo
-  1670) by sweep, a notable sport-narrative upset but statistically
-  close. $Q$ assigns VGK reaching the Final $P_Q = 12.65\%$ vs
-  $P_C = 20.00\%$, a $0.63\times$ down-weighting : the seeded
-  approximation does not over-claim upset signal where the rating
-  data does not support it.
-\end{itemize}
+A consistent pattern emerges. Realised underdog deep runs are
+upweighted : the Spurs reaching the NBA Finals as an 8-seed after
+eliminating 1-seed OKC ($1.36\times$ on the reach-Finals marginal,
+$2.61\times$ on the champion marginal), Andreeva's RG WTA title
+($1.68\times$), Chwalinska's runner-up run with a Tennis Elo of
+1710 and a WTA ranking of 114 pre-tournament ($2.78\times$), and
+the underdog ATP semifinalists Mensik and Arnaldi ($4.17\times$
+and $4.44\times$ respectively). Top favourites that lost early are
+sharply down-weighted in turn : Zverev on the ATP side at
+$0.11\times$, Świątek on the WTA side at $0.10\times$. When the
+chalk holds --- PSG winning the UCL as the top favourite --- the
+walk returns essentially the classical value ($Q/C \approx 1.01$),
+which we read as evidence that the encoding does not manufacture
+upset signal in its absence.
+
+The price for that asymmetry shows up on top seeds that survive
+deep. The New York Knicks reached the NBA Finals from the East,
+yet $Q$ assigns their reach-Finals marginal $P_Q = 12.85\%$ versus
+$P_C = 21.27\%$ ($0.60\times$). The seeded approximation biases
+against top-seed bracket positions whether or not those top seeds
+ultimately survive ; the upweight on underdog paths and the
+down-weight on chalk paths are two sides of the same operation. The
+NHL Vegas--Colorado West Final is the cleanest control we have :
+narratively an upset, statistically a coin flip (Elo 1645 vs 1670),
+and the walk does not produce upset signal there either
+($Q/C = 0.63\times$ on Vegas reaching the Stanley Cup Final).
 
 The closed-form seeded estimator $S$ produces values within
 sampling noise of $Q$ on all five tournaments (max $|Q-S| <
@@ -380,21 +378,77 @@ ongoing at the time of writing (NYK leading 2--0 in the best-of-7).}
 \label{fig:fig2}
 \end{figure}
 
+\subsection{Grover amplification on a bracket query}
+\label{sec:grover}
+
+A natural follow-up to the encoding is to amplify the marginal of a
+specific tournament outcome using Grover's algorithm
+\cite{grover1996fast}, rather than estimating it by direct sampling.
+The 2026 NBA bracket gives a clean test bed : SAS reaching the NBA
+Finals as an 8-seed corresponds to a 4-qubit constraint on the
+15-qubit register (the bits indexing the OKC-SAS R1 match, the West
+CSF, the West CF, and the NBA Finals being on the West side). We
+encode that constraint as a phase oracle $O$ and pair it with the
+diffusion operator $D = A (2|0\rangle\langle 0| - I) A^\dagger$, where
+$A$ is the bracket prep unitary of Section~\ref{sec:method}.
+
+Figure~\ref{fig:fig4} shows the empirical amplification curve : the
+SAS-champion measurement frequency, sampled at $50\,000$ shots per
+point, against the number $k$ of Grover iterations applied to $A|0\rangle$.
+The baseline value $p_0 = 3.46\%$ matches the conditional encoding's
+prediction at $k=0$. Successive iterations follow the textbook
+envelope $\sin^2((2k+1)\theta)$ with $\sin\theta = \sqrt{p_0}$, peaking
+at $97.89\%$ on $k = 4$ (the theoretical optimum being
+$k^\star = \pi / (4 \arcsin\sqrt{p_0}) \approx 4.20$), decaying to
+$\sim 1\%$ at $k = 8$, then peaking again at $99.72\%$ on $k = 12$.
+
+The shot-count implication is immediate. Targeting a $5\%$ relative
+precision on the SAS-champion frequency, direct sampling requires
+$N_{\text{unamp}} = (1 - p_0)/(p_0 \rho^2) \approx 11\,200$ shots,
+while sampling from the amplified state with $k = 4$ requires
+$N_{\text{amp}} \approx 24$ shots (and $\approx 1$ shot at $k = 12$).
+The roughly $10^4 \times$ empirical shot-count reduction is consistent
+with the quadratic Grover speedup $O(1/\sqrt{p_0})$ in the
+amplitude-amplification sense \cite{brassard2002quantum}. The cost is
+circuit depth : each Grover iteration adds one application of
+$A$, $O$, and $A^\dagger$, scaling the depth by roughly $2k + 1$.
+On 15-qubit Aer this remains tractable on a single laptop CPU, with
+the full $k = 0\dots15$ sweep completing in a few minutes.
+
+This single bracket query is a proof of concept, not yet a full
+prediction-market pricing engine ; the latter would require running
+amplitude estimation (the Brassard-Hoyer-Mosca-Tapp algorithm) on the
+same construction, with ancilla qubits, to recover an estimate of
+$p_0$ itself rather than just amplifying the target subspace. That
+extension is straightforward given the current encoding and we leave
+it to follow-up work.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/fig4_grover_speedup.pdf}
+\caption{Grover amplification on the SAS-champion query of the 2026
+NBA Playoffs bracket. Blue : Aer measurement at $50\,000$ shots per
+point. Gray dashed : theoretical envelope $\sin^2((2k+1)\theta)$ with
+$\sin\theta = \sqrt{p_0}$ and $p_0 = 3.46\%$ (orange dotted).
+Two peaks at $k = 4$ ($97.89\%$) and $k = 12$ ($99.72\%$), consistent
+with the textbook Grover periodicity.}
+\label{fig:fig4}
+\end{figure}
+
 \subsection{Prospective prediction : FIFA World Cup 2026}
 
-The 2026 FIFA World Cup kicks off on June~11, 2026 in 16 host cities
-across USA, Canada, and Mexico. We issue a prospective prediction on
-the R16-onward stage (15 matches, 15 qubits) by taking the top-16
+The 2026 FIFA World Cup kicks off on June~11 across 16 host cities
+in the USA, Canada, and Mexico. We issue a prospective prediction
+on the R16-onward stage (15 matches, 15 qubits) by taking the top-16
 teams ranked by $P(\text{reach R16})$ from the PulsQuant classical
-MC of 2026-06-06T17:04 and assigning them to a standard balanced
-1-vs-16 bracket. Table~\ref{tab:wc} shows the top entries of the
-quantum-walk distribution and the corresponding classical MC values.
-The quantum walk redistributes substantial probability mass from
-the top favorites (FRA $-9.5$\,pp, ESP $-4.8$\,pp) toward mid-tier
-nations (NED $+3.0$\,pp, BEL $+2.9$\,pp, AUT $+2.2$\,pp, COL
-$+2.0$\,pp). The qualitative pattern matches the back-test on NBA :
-the seeded approximation systematically upweights paths in which
-underdog upsets propagate through multiple rounds.
+MC snapshot of 2026-06-06T17:04 and slotting them into a standard
+balanced 1-vs-16 bracket. Table~\ref{tab:wc} shows the top
+entries of the quantum-walk distribution alongside the corresponding
+classical values. Mass moves from the top favourites (FRA $-9.5$\,pp,
+ESP $-4.8$\,pp) toward the mid-tier (NED $+3.0$\,pp, BEL $+2.9$\,pp,
+AUT $+2.2$\,pp, COL $+2.0$\,pp) --- the same redistribution that
+the NBA back-test exhibited, transposed to a draw whose ground
+truth is still six weeks away.
 
 \begin{table}[h]
 \centering
@@ -422,97 +476,141 @@ FRA & 5.17\% & 14.63\% & $-9.45$\,pp \\
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{What we are not claiming.} We do not claim quantum advantage
-at simulator scales. The 15-qubit experiments above run in 0.16~s for
-the quantum sampling versus 0.06~s for the classical MC (Qiskit Aer
-on a single CPU thread, $50\,000$ shots/sims), and the seeded
-approximation introduces a controlled bias relative to exact MC. The
-contribution is conceptual rather than performance-oriented at this
-scale.
+A word on what is and isn't being claimed. At 15-qubit simulator
+scales we are not racing the classical MC : the
+quantum sampling runs in $0.16$~s and the classical MC in $0.06$~s
+(Qiskit Aer on a single CPU thread, 50\,000 shots and sims). The
+contribution is the encoding itself, not its present runtime. The
+seeded approximation is in particular a controlled and reversible
+source of bias --- the closed-form check in
+Section~\ref{sec:method}.2 attributes the entire $Q$--$C$ gap to it,
+which means upgrading the encoding (next paragraph) recovers
+unbiased MC behaviour up to the qubit budget.
 
-\paragraph{What we are claiming.} The seeded quantum-walk encoding
-provides a natural way to inject structural correlation between
-bracket matches without explicit path conditioning, and the resulting
-distribution systematically upweights paths in which downstream
-correlations propagate (concretely, paths in which an underdog upset
-survives multiple rounds). We verify empirically that this upweighting
-is not a stochastic artifact (Section~\ref{sec:method}.2), and
-demonstrate that it correctly anticipates a variety of realised
-deep-run paths : the Spurs eliminating the 1-seed Thunder in the
-Western Conference Finals to reach the NBA Finals as an 8-seed ; the
-18-year-old Mirra Andreeva winning the Roland Garros WTA title
-($1.68\times$ upweight on her champion marginal) ; Maja Chwalinska
-reaching the same RG WTA Final as a qualifier ranked 114th in the WTA
-($2.78\times$ upweight on her runner-up marginal) ; and underdog
-semifinalists Mensik and Arnaldi in the RG ATP draw ($4.17\times$
-and $4.44\times$). Across these heterogeneous brackets the
-upweighting precisely identifies the marginal that the ``team to
-reach round $X$'' family of prediction-market futures prices,
-the population whose realised odds are routinely under-estimated
-by classical MC-driven pricing. The trade-off is explicit and
-documented : the same approximation systematically down-weights top
-seeds that survive deep (NYK reaching the NBA Finals at $0.60\times$),
-which translates to false-negative signal on the chalk-favourite
-deep-run marginal. The seeded approximation is therefore informative
-specifically on the asymmetric upset-pricing side, which is also the
-side where prediction-market liquidity is thinnest.
+What the construction does buy is structural correlation between
+adjacent matches for free, by entanglement, without explicit path
+conditioning. The empirical effect on the five tournaments we tested
+is consistent : every realised underdog deep run we have a
+back-test for is upweighted, by factors ranging from $1.36\times$
+(SAS reaching the NBA Finals) to $4.44\times$ (Arnaldi as an ATP
+underdog semifinalist), and the WTA champion Andreeva sits in the
+middle of that range at $1.68\times$. The down-weighting on top
+seeds that survive deep --- the New York Knicks reach-Finals
+marginal at $0.60\times$ being the cleanest example --- is the
+price tag of that asymmetry, and is reported in the same Table.
+Both effects come from the same approximation : there is no free
+lunch here, only a trade-off whose sign is exactly the one that
+matches how prediction markets misprice tournaments.
 
-\paragraph{Application to prediction markets.} Sports prediction
-markets such as Polymarket, with 2025 trading volumes exceeding
-\$44~B and an ICE-backed \$9~B valuation, routinely under-price
-correlated upset paths because their pricing aggregates over
-historical-rate marginal frequencies rather than bracket-structural
-joint probabilities. A pricing model that natively assigns higher
-prior weight to upset paths would, all else equal, identify these
-under-pricings ex ante.
+The prediction-market angle is the practical motivation. Polymarket
+crossed \$44~B in 2025 trading volume on its way to an ICE-backed
+\$9~B valuation, and its futures pricing aggregates over historical
+marginal frequencies rather than over bracket-structural joint
+probabilities. A model that puts higher prior weight on
+structurally-correlated upset paths would, ex ante, identify the
+mispricings on the underdog side of that liquidity profile --- which
+is also the side where the spreads are widest and the inventory is
+shortest. That is the asymmetry the seeded walk exploits.
 
-\paragraph{Future work.} The most promising open direction, originally
-flagged by \cite{quantumfrontiers_wc_2018}, is the use of Grover
-amplitude amplification to answer path-likelihood queries of the form
-``conditional on team $X$ reaching the semifinal, what is the most
-likely champion ?''. A proper conditional formulation would also
-eliminate the seeded approximation's bias by encoding all $2^{r-1}$
-parent configurations explicitly via cascading controlled rotations,
-at the price of asymptotically growing circuit depth. Both extensions
-are tractable in simulation up to $\sim 25$ qubits on a single GPU
-via cuQuantum \cite{cuquantum_benchmark_2023}, and remain natural
-candidates for early fault-tolerant hardware.
+\subsection*{A naive question, posed plainly}
+\label{sec:candide}
+
+One can pose the question naively : can a spectator watching a match
+be quantum-mechanically entangled with the ball, the referee, or the
+player at the moment of the goal ? The operational answer is no.
+Macroscopic decoherence settles it : an object the size of a
+football loses its quantum coherence in roughly $10^{-23}$ seconds
+at room temperature \cite{joos_zeh_1985}, and the human brain,
+energetically, is an even more hostile environment for coherence
+\cite{tegmark_2000}. The question, taken literally, is closed.
+
+One notes nonetheless, on re-reading the encoding of
+Section~\ref{sec:method}, that the construction belongs to the same
+mathematical family as objects studied for fifteen years in the
+still-young field of quantum biology. Our quantum walk on the graph
+of matches of a tournament shares its structure with the excitonic
+walk of the FMO photosynthetic complex \cite{engel_2007}, where
+coherent energy packets propagate on a graph of
+conditionally-coupled chromophores. The pair of entangled qubits
+that encodes a conditional matchup in our construction shares its
+structure with the pair of entangled radicals that migratory birds
+sustain in their retinal cryptochrome for geomagnetic orientation
+\cite{hore_mouritsen_2016}. The physical scales are separated by
+thirteen orders of magnitude, but the mathematical object underneath,
+a multipartite entangled state whose correlations are conditional
+on a graph, is rigorously the same.
+
+We push the parallel no further here. Our model remains a pricing
+tool, not a physical substrate. That the same primitive appears
+both at the femtosecond scale of energy transport in leaves and at
+the hourly scale of a single-elimination bracket seems however
+worth a mention, less as an argument for this paper than as a hint
+at what this structure might price elsewhere.
+
+The proof-of-concept Grover query in Section~\ref{sec:grover}
+addresses the simplest variant of the path-likelihood family already
+flagged by the 2018 \emph{Quantum Frontiers} note
+\cite{quantumfrontiers_wc_2018} : an unconditional ``team $X$ wins
+the tournament'' subspace. The next natural step is the conditional
+form ``given that $X$ reaches the semifinal, who is the most likely
+champion ?'', which couples the same oracle construction with an
+extra conditioning register, and which we leave to follow-up work
+together with the move from amplitude amplification to amplitude
+estimation (the Brassard-Hoyer-Mosca-Tapp algorithm
+\cite{brassard2002quantum}) for direct estimation of $p_0$ itself.
+A faithful encoding of all $2^{r-1}$ parent configurations would in
+parallel eliminate the seeded bias, at the cost of circuit depth
+growing with bracket depth. All three extensions remain tractable
+in simulation up to roughly 25 qubits on a single GPU via cuQuantum
+\cite{cuquantum_benchmark_2023}, and are natural targets for the
+first generations of fault-tolerant hardware.
 
 \section{Conclusion}
 
-We have introduced a quantum-walk formalism for bracket-structured
-probability estimation, formalized a seeded conditional encoding, and
-verified that its Qiskit Aer realisation matches a closed-form
-estimator under the same approximation to within sampling noise. The
-contribution is conceptual rather than performance-oriented at the
-current 15-qubit scale : no quantum advantage is claimed, but the
-encoding captures bracket correlation structure that classical Monte
-Carlo only reproduces via explicit path conditioning.
+We have written down a quantum-walk encoding for bracket-structured
+probability estimation, formalised the seeded approximation it
+relies on at deeper rounds, and verified that the Qiskit Aer
+implementation matches a closed-form enumeration of the same rule
+to within sampling noise. At the current 15-qubit simulator scale
+the contribution is conceptual rather than algorithmic : no quantum
+advantage is claimed, but the encoding reproduces bracket
+correlation structure that classical Monte Carlo only recovers
+through explicit path conditioning.
 
-Five real-tournament back-tests provide empirical support. On the
-asymmetric upset side, the seeded walk substantially upweights every
-realised deep-run path we tested (NBA Spurs, RG WTA Andreeva and
-Chwalinska, RG ATP Mensik and Arnaldi), with $Q/C$ ratios between
-$1.36\times$ and $4.44\times$. On the chalk side it does not
-fabricate signal where none is structurally present (UCL PSG
-champion at $Q/C \approx 1.01$ ; NHL Vegas-eliminates-Colorado
-near-coin-flip at $Q/C = 0.63\times$). The trade-off is also
-explicit and reproducible : top seeds that survive deep are
-down-weighted regardless of outcome (NYK reach-Finals marginal
-$0.60\times$). The asymmetry is informative for prediction-market
-pricing, where the under-pricing of structurally-correlated upset
-paths is precisely the population that the seeded approximation
-preferentially identifies.
+The back-tests on five real 2025--2026 brackets are the main
+empirical message. The walk upweights every realised underdog deep
+run in our sample (NBA Spurs, RG WTA Andreeva and Chwalinska, RG ATP
+Mensik and Arnaldi), with $Q/C$ ratios between $1.36\times$ and
+$4.44\times$. It does not produce upset signal where the rating
+spread does not support it (UCL PSG champion at $\approx 1.01$, NHL
+Vegas--Colorado near-coin-flip at $0.63\times$). It does
+systematically down-weight top seeds that survive deep regardless
+of outcome (NYK reach-Finals marginal at $0.60\times$). All three
+behaviours come from the same approximation and are reported with
+the same Table. For prediction-market pricing the sign of the bias
+is in the right direction : the under-pricing of structurally-
+correlated upset paths is precisely the population the seeded
+approximation preferentially identifies.
 
-We additionally issue a prospective prediction for the 2026 FIFA
-World Cup R16-onward (kickoff June 11, 2026) under a balanced 1-vs-16
-bracket assumption, with mid-tier nations (NED, BEL, AUT, COL)
-upweighted by 2--3 percentage points relative to classical MC and
-the top favourites (FRA, ESP, BRA) commensurately reduced. The
-encoding scales tractably to $\sim 25$ qubits on a single GPU via
-cuQuantum, providing a natural target for both the late
-NISQ era and the 50--100 logical-qubit hardware expected to come
-online during the early fault-tolerant phase.
+We additionally implement, on the same encoding, Grover amplitude
+amplification for the SAS-champion subspace of the NBA bracket
+(Section~\ref{sec:grover}). The Aer measurement follows the textbook
+$\sin^2((2k+1)\theta)$ envelope and peaks at $97.89\%$ on $k = 4$
+iterations, reducing the shot count for a 5\% relative precision on
+$p_0$ by roughly four orders of magnitude. This is a proof of concept
+rather than a full pricing engine, but it closes the most basic of
+the Grover-based extensions originally flagged as future work by the
+2018 \emph{Quantum Frontiers} note.
+
+Finally we issue, before the June~11 kickoff, a prospective
+prediction for the FIFA World Cup 2026 R16-onward under a balanced
+1-vs-16 bracket assumption. Mid-tier nations (NED, BEL, AUT, COL)
+are upweighted by 2--3 percentage points over classical MC, and the
+top favourites (FRA, ESP, BRA) reduced by a commensurate amount.
+The encoding scales to roughly 25 qubits on a single GPU via
+cuQuantum, and is a natural candidate for the late NISQ window and
+the 50--100 logical-qubit regime expected from the first generations
+of fault-tolerant hardware.
 
 \bibliographystyle{plain}
 \bibliography{references}

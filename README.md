@@ -30,13 +30,17 @@ quantum_bracket/
 │   ├── smoke_test.py           — 8-team sanity check (Q vs C).
 │   ├── verify_seeded_bias.py   — Closed-form verification that Q ≈ S.
 │   ├── run_nba_playoffs_2026.py — 15-qubit back-test, SAS upset.
+│   ├── run_nhl_2026.py         — NHL Stanley Cup CF back-test.
+│   ├── run_all_brackets.py     — UCL + RG ATP + RG WTA back-tests.
 │   ├── run_wc2026.py           — Prospective WC 2026 R16+ prediction.
+│   ├── run_grover_nba_sas.py   — Grover amplification on SAS-champion query (Section 4.4).
 │   └── make_plots.py           — Generate paper figures.
 ├── data/                       — JSON outputs (one per experiment).
 ├── figures/                    — PDF + PNG figures for the paper.
 ├── paper/
 │   ├── main.tex                — arXiv preprint source.
 │   └── references.bib          — BibTeX bibliography.
+├── bonus/                      — Easter egg, see below.
 ├── venv/                       — Python 3.10 virtualenv with Qiskit 2.4.
 └── README.md
 ```
@@ -78,6 +82,13 @@ If you use this code in academic work, please cite the preprint :
   note   = {arXiv preprint, submitted June 2026.}
 }
 ```
+
+## Easter egg
+
+[`bonus/conversation_avec_ma_fille.md`](bonus/conversation_avec_ma_fille.md) —
+the question my daughter asked me one evening and the honest version of the
+answer. Section 5.4 of the main paper has the academic version of the same
+content (in English). The bonus file is in French.
 
 ## Honest limitations
 
