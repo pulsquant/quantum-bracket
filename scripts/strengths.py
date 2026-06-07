@@ -18,23 +18,30 @@ Sources :
 from __future__ import annotations
 
 # NBA Playoffs 2026 — end of regular season Elo (illustrative).
+# Mirrors `scripts/run_nba_playoffs_2026.py:NBA_ELO_2026` (the standalone
+# NBA back-test) so the all_brackets sweep and the standalone produce
+# identical numbers. Teams = actual 2026 playoff entrants : East = BOS,
+# ATL, CLE, IND, MIL, ORL, NYK, PHI ; West = OKC, SAS, LAC, DAL, MIN,
+# NOP, DEN, LAL.
 NBA_RATINGS: dict[str, float] = {
+    # East
     "NBA-BOS": 1740,
-    "NBA-NY":  1690,
-    "NBA-PHI": 1590,
+    "NBA-NYK": 1690,
+    "NBA-MIL": 1670,
     "NBA-CLE": 1655,
-    "NBA-ATL": 1545,
-    "NBA-DET": 1480,
-    "NBA-TOR": 1505,
+    "NBA-IND": 1620,
     "NBA-ORL": 1605,
+    "NBA-PHI": 1590,
+    "NBA-ATL": 1545,
+    # West
     "NBA-OKC": 1745,
     "NBA-DEN": 1700,
     "NBA-MIN": 1685,
+    "NBA-LAC": 1650,
+    "NBA-DAL": 1635,
+    "NBA-NOP": 1610,
     "NBA-LAL": 1600,
-    "NBA-HOU": 1620,
-    "NBA-PHX": 1565,
-    "NBA-POR": 1490,
-    "NBA-SA":  1555,
+    "NBA-SAS": 1555,
 }
 
 # NHL Stanley Cup Playoffs 2026 — end of regular season Elo.

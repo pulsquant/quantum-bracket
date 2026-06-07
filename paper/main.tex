@@ -73,8 +73,8 @@ from a production prediction-market database (not balanced
 assumptions). On the 2026 NBA Playoffs --- where the San Antonio
 Spurs reached the NBA Finals from the 8-seed in the West, eliminating
 the 1-seed OKC in the Western Conference Finals --- the seeded walk
-assigns $P_Q(\text{SAS reaches Finals}) = 8.51\%$ against $P_C =
-6.24\%$ ($\mathbf{1.36\times}$ upweight) and a $\mathbf{2.61\times}$
+assigns $P_Q(\text{SAS reaches Finals}) = 5.87\%$ against $P_C =
+3.43\%$ ($\mathbf{1.71\times}$ upweight) and a $\mathbf{3.05\times}$
 upweight on $P(\text{SAS champion})$. On the Roland Garros WTA bracket
 from the Round of 16 onward, the eventual champion Mirra Andreeva is
 upweighted $\mathbf{1.68\times}$ on her champion marginal and the
@@ -97,9 +97,9 @@ iterations (textbook optimum), and the full QAE with $m = 6$ ancilla
 qubits (21 qubits total on a single-laptop Aer simulator) returns
 $\hat p_{\text{mode}} = 3.81\%$ on the SAS-champion amplitude versus
 the reference $p_0 = 3.46\%$ from unamplified sampling. The QAE
-mode and the weighted-mean estimator converge to the reference
-within $0.5$\,pp across the $m \in \{4, 5, 6\}$ sweep, realising the
-quadratic Brassard speedup on a real-bracket query.
+mode and the weighted-mean estimator agree with the reference within
+the $\pi / 2^m$ resolution band at every $m \in \{4, 5, 6\}$,
+realising the quadratic Brassard speedup on a real-bracket query.
 
 A prospective prediction for the FIFA World Cup 2026 (kickoff
 June 11, 2026) is issued in the same form : mid-tier nations (NED,
@@ -216,9 +216,11 @@ early industrial demonstrations \cite{egger2020option}.
 \subsection{Quantum-enhanced finance, 2024--2026}
 
 The most directly comparable recent industrial benchmark is the
-JPMorgan/IBM end-to-end pricing of European options using QAE on a
-127-qubit superconducting device, reporting a 100$\times$ runtime
-reduction over the institution's CPU baseline. The Goldman--IBM
+Stamatopoulos et al. \cite{stamatopoulos2020option} pipeline for
+end-to-end pricing of European options via QAE on near-term IBM
+hardware, subsequently scaled by the IBM Quantum team to its
+127-qubit superconducting devices in the 2023--2024 NISQ era
+\cite{bharti2022nisq}. The Goldman--IBM
 resource estimate \cite{goldman_ibm_2021} pegged true quantum
 advantage in derivative pricing at $\sim 7500$ logical qubits and
 T-depth $\sim 4.6 \times 10^7$, a regime still beyond any current
@@ -285,7 +287,7 @@ All experiments run on Qiskit 2.4.1 + Qiskit Aer 0.13 in
 single-laptop CPU mode. We use 50\,000 shots per quantum circuit
 and 50\,000 sims per classical MC, with a fixed seed (42) for
 reproducibility. Source code and raw data are available at
-\texttt{https://github.com/pulsquant/quantum-bracket}.
+\url{https://github.com/pulsquant/quantum-bracket}.
 
 \subsection{Sanity check : 8-team bracket}
 
@@ -336,11 +338,11 @@ tennis tournaments are loaded from the Round of 16 onward.}
 \toprule
 Tournament & Realised role / participant & $P_Q$ & $P_C$ & $P_Q/P_C$ \\
 \midrule
-NBA Playoffs 2026 & SAS reaches Finals (8-seed, beat OKC WCF) & 8.51\% & 6.24\% & 1.36$\times$ \\
-                  & NYK reaches Finals (East favourite) & 12.85\% & 21.27\% & $\mathbf{0.60\times}$ \\
-                  & NYK champion (Finals 2--0, ongoing) & 4.60\% & 11.17\% & $\mathbf{0.41\times}$ \\
-                  & SAS champion (Finals 2--0 down) & 5.65\% & 2.16\% & $\mathbf{2.61\times}$ \\
-                  & OKC top-seed (eliminated WCF) & 8.65\% & 19.19\% & $\mathbf{0.45\times}$ \\
+NBA Playoffs 2026 & SAS reaches Finals (8-seed, beat OKC WCF) & 5.87\% & 3.43\% & $\mathbf{1.71\times}$ \\
+                  & SAS champion (Finals 2--0 down)            & 3.46\% & 1.13\% & $\mathbf{3.05\times}$ \\
+                  & NYK reaches Finals (East favourite)        & 13.22\% & 18.75\% & 0.71$\times$ \\
+                  & NYK champion (Finals 2--0, ongoing)        & 4.83\% & 9.59\% & $\mathbf{0.50\times}$ \\
+                  & OKC top-seed (eliminated WCF)              & 18.52\% & 17.73\% & 1.04$\times$ \\
 \midrule
 NHL Stanley Cup 2026 & VGK reaches Final (swept COL WCF 4--0) & 12.65\% & 20.00\% & $\mathbf{0.63\times}$ \\
                      & CAR reaches Final (East CF winner) & 26.93\% & 23.60\% & 1.14$\times$ \\
@@ -368,29 +370,36 @@ RG WTA 2026 (R16+) & \textbf{Andreeva champion (18 y/o)} & \textbf{11.01\%} & \t
 
 A consistent pattern emerges. Realised underdog deep runs are
 upweighted : the Spurs reaching the NBA Finals as an 8-seed after
-eliminating 1-seed OKC ($1.36\times$ on the reach-Finals marginal,
-$2.61\times$ on the champion marginal), Andreeva's RG WTA title
+eliminating 1-seed OKC ($1.71\times$ on the reach-Finals marginal,
+$3.05\times$ on the champion marginal), Andreeva's RG WTA title
 ($1.68\times$), Chwalinska's runner-up run with a Tennis Elo of
 1710 and a WTA ranking of 114 pre-tournament ($2.78\times$), and
 the underdog ATP semifinalists Mensik and Arnaldi ($4.17\times$
-and $4.44\times$ respectively). Top favourites that lost early are
-sharply down-weighted in turn : Zverev on the ATP side at
-$0.11\times$, Świątek on the WTA side at $0.10\times$. When the
-chalk holds --- PSG winning the UCL as the top favourite --- the
-walk returns essentially the classical value ($Q/C \approx 1.01$),
-which we read as evidence that the encoding does not manufacture
+and $4.44\times$ respectively). Top favourites that lost early in
+their bracket are down-weighted in turn, with Świątek the cleanest
+case at $0.10\times$ on the WTA side (eliminated R16 by Andreeva).
+On the same side, top favourites whose Elo edge is robust against
+their actual draw remain at $Q/C \approx 1$ : OKC at $1.04\times$
+on the NBA champion marginal, despite being eliminated by SAS in
+the WCF, simply because OKC's Elo (1745) was the highest in the
+field and the seeded approximation reads its path through the West
+as competitive. When the chalk holds outright, the walk returns
+essentially the classical value : PSG winning the UCL gives
+$Q/C \approx 1.01$, evidence that the encoding does not manufacture
 upset signal in its absence.
 
 The price for that asymmetry shows up on top seeds that survive
 deep. The New York Knicks reached the NBA Finals from the East,
-yet $Q$ assigns their reach-Finals marginal $P_Q = 12.85\%$ versus
-$P_C = 21.27\%$ ($0.60\times$). The seeded approximation biases
-against top-seed bracket positions whether or not those top seeds
-ultimately survive ; the upweight on underdog paths and the
-down-weight on chalk paths are two sides of the same operation. The
-NHL Vegas--Colorado West Final is the cleanest control we have :
-narratively an upset, statistically a coin flip (Elo 1645 vs 1670),
-and the walk does not produce upset signal there either
+yet $Q$ assigns their reach-Finals marginal $P_Q = 13.22\%$ versus
+$P_C = 18.75\%$ ($0.71\times$), and their champion marginal
+$P_Q = 4.83\%$ versus $P_C = 9.59\%$ ($0.50\times$). The seeded
+approximation biases against top-seed bracket positions whenever
+their Elo lead is moderate enough to be eroded by repeated
+conditional matchups ; the upweight on underdog paths and the
+down-weight on chalk paths are two sides of the same operation.
+The NHL Vegas--Colorado West Final is the cleanest control we
+have : narratively an upset, statistically a coin flip (Elo 1645
+vs 1670), and the walk does not produce upset signal there either
 ($Q/C = 0.63\times$ on Vegas reaching the Stanley Cup Final).
 
 The closed-form seeded estimator $S$ produces values within
@@ -407,11 +416,15 @@ toward bracket-bottom paths.
 \centering
 \includegraphics[width=\linewidth]{figures/fig2_nba_2026.pdf}
 \caption{2026 NBA Playoffs champion distribution (15 qubits). Quantum
-walk redistributes probability mass from top seeds (OKC, BOS, NYK,
-DEN) toward bracket-bottom paths. SAS, the 8-seed West, made the
-bracket-relevant deep run of the 2026 playoffs by eliminating OKC
+walk redistributes probability mass selectively : mid-East seeds NYK
+and DEN are down-weighted (their classical paths are heavy on
+moderate-Elo opponents that the seeded approximation reads as
+upset-vulnerable), while the 1-seeds OKC and BOS remain close to their
+classical values (their Elo lead is robust enough against the actual
+draw that no down-weighting is applied). SAS, the 8-seed West, made
+the bracket-relevant deep run of the 2026 playoffs by eliminating OKC
 in the Western Conference Finals to reach the NBA Finals --- exactly
-the kind of structurally correlated upset path our seeded quantum
+the kind of structurally correlated upset path the seeded quantum
 walk is designed to upweight ex ante. The NBA Finals series was
 ongoing at the time of writing (NYK leading 2--0 in the best-of-7).}
 \label{fig:fig2}
@@ -624,13 +637,14 @@ What the construction does buy is structural correlation between
 adjacent matches for free, by entanglement, without explicit path
 conditioning. The empirical effect on the five tournaments we tested
 is consistent : every realised underdog deep run we have a
-back-test for is upweighted, by factors ranging from $1.36\times$
+back-test for is upweighted, by factors ranging from $1.71\times$
 (SAS reaching the NBA Finals) to $4.44\times$ (Arnaldi as an ATP
 underdog semifinalist), and the WTA champion Andreeva sits in the
 middle of that range at $1.68\times$. The down-weighting on top
 seeds that survive deep --- the New York Knicks reach-Finals
-marginal at $0.60\times$ being the cleanest example --- is the
-price tag of that asymmetry, and is reported in the same Table.
+marginal at $0.71\times$ and their champion marginal at
+$0.50\times$ being the cleanest examples --- is the price tag of
+that asymmetry, and is reported in the same Table.
 Both effects come from the same approximation : there is no free
 lunch here, only a trade-off whose sign is exactly the one that
 matches how prediction markets misprice tournaments.
@@ -723,13 +737,15 @@ through explicit path conditioning.
 The back-tests on five real 2025--2026 brackets are the main
 empirical message. The walk upweights every realised underdog deep
 run in our sample (NBA Spurs, RG WTA Andreeva and Chwalinska, RG ATP
-Mensik and Arnaldi), with $Q/C$ ratios between $1.36\times$ and
+Mensik and Arnaldi), with $Q/C$ ratios between $1.71\times$ and
 $4.44\times$. It does not produce upset signal where the rating
 spread does not support it (UCL PSG champion at $\approx 1.01$, NHL
-Vegas--Colorado near-coin-flip at $0.63\times$). It does
-systematically down-weight top seeds that survive deep regardless
-of outcome (NYK reach-Finals marginal at $0.60\times$). All three
-behaviours come from the same approximation and are reported with
+Vegas--Colorado near-coin-flip at $0.63\times$, NBA OKC champion at
+$1.04\times$). It does down-weight top seeds whose Elo lead is
+moderate enough to be eroded by repeated conditional matchups
+(NYK reach-Finals marginal at $0.71\times$, NYK champion at
+$0.50\times$). All three behaviours come from the same approximation
+and are reported with
 the same Table. For prediction-market pricing the sign of the bias
 is in the right direction : the under-pricing of structurally-
 correlated upset paths is precisely the population the seeded
