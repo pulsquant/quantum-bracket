@@ -1,0 +1,35 @@
+{
+  "bracket": "NBA Playoffs 2026",
+  "target": "SAS champion",
+  "constraints": {
+    "4": 1,
+    "10": 0,
+    "13": 0,
+    "14": 1
+  },
+  "reference_p0": 0.0346,
+  "shots_per_run": 10000,
+  "results_per_m": {
+    "4": {
+      "n_total_qubits": 19,
+      "resolution_pi2_over_2m": 0.6168502750680849,
+      "p_mode": 0.03806023374435662,
+      "p_mean": 0.03837134549593209,
+      "y_mode": 15
+    },
+    "5": {
+      "n_total_qubits": 20,
+      "resolution_pi2_over_2m": 0.30842513753404244,
+      "p_mode": 0.03806023374435662,
+      "p_mean": 0.039020896296190086,
+      "y_mode": 30
+    },
+    "6": {
+      "n_total_qubits": 21,
+      "resolution_pi2_over_2m": 0.15421256876702122,
+      "p_mode": 0.03806023374435662,
+      "p_mean": 0.03952367975615186,
+      "y_mode": 60
+    }
+  }
+}

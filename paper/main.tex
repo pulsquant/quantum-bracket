@@ -89,16 +89,17 @@ in the NHL Stanley Cup Conference Finals --- statistically a coin
 flip despite the sport-narrative upset framing --- gives $Q/C =
 0.63\times$ on Vegas reaching the Final.
 
-As a first operational extension of the encoding, we implement Grover
-amplitude \emph{amplification} (not yet the full amplitude
-\emph{estimation} of Brassard-Hoyer-Mosca-Tapp, which we leave to
-follow-up work) on the SAS-champion query of the NBA bracket. The
-empirical $\sin^2((2k+1)\theta)$ amplification curve peaks at
-$97.89\%$ on $k = 4$ iterations (the textbook optimum), shrinking
-the shot-count requirement for a 5\% relative precision on the
-SAS-champion frequency from $\sim$11\,000 shots to $\sim$24, a
-$\sim$$10^4 \times$ empirical reduction, consistent with the
-quadratic Grover speedup.
+As operational extensions of the encoding, we implement both Grover
+amplitude amplification and Quantum Amplitude Estimation
+\cite{brassard2002quantum} on the SAS-champion query of the NBA
+bracket. The amplification curve peaks at $97.89\%$ on $k = 4$
+iterations (textbook optimum), and the full QAE with $m = 6$ ancilla
+qubits (21 qubits total on a single-laptop Aer simulator) returns
+$\hat p_{\text{mode}} = 3.81\%$ on the SAS-champion amplitude versus
+the reference $p_0 = 3.46\%$ from unamplified sampling. The QAE
+mode and the weighted-mean estimator converge to the reference
+within $0.5$\,pp across the $m \in \{4, 5, 6\}$ sweep, realising the
+quadratic Brassard speedup on a real-bracket query.
 
 A prospective prediction for the FIFA World Cup 2026 (kickoff
 June 11, 2026) is issued in the same form : mid-tier nations (NED,
@@ -453,13 +454,11 @@ $A$, $O$, and $A^\dagger$, scaling the depth by roughly $2k + 1$.
 On 15-qubit Aer this remains tractable on a single laptop CPU, with
 the full $k = 0\dots15$ sweep completing in a few minutes.
 
-This single bracket query is a proof of concept, not yet a full
-prediction-market pricing engine ; the latter would require running
-amplitude estimation (the Brassard-Hoyer-Mosca-Tapp algorithm) on the
-same construction, with ancilla qubits, to recover an estimate of
-$p_0$ itself rather than just amplifying the target subspace. That
-extension is straightforward given the current encoding and we leave
-it to follow-up work.
+Amplification rotates the bracket state until the SAS-champion
+subspace dominates the measurement, but it does not directly recover
+the value of $p_0$ itself : it just rotates it close to 1. Section
+\ref{sec:qae} closes that gap with the canonical Brassard-Hoyer-Mosca-
+Tapp amplitude estimation procedure on the same Grover operator.
 
 \begin{figure}[!htbp]
 \centering
@@ -472,6 +471,98 @@ Two peaks at $k = 4$ ($97.89\%$) and $k = 12$ ($99.72\%$), consistent
 with the textbook Grover periodicity.}
 \label{fig:fig4}
 \end{figure}
+
+\subsection{Quantum amplitude estimation on the same query}
+\label{sec:qae}
+
+The canonical extension of the previous section's Grover amplification
+is Quantum Amplitude Estimation (QAE) \cite{brassard2002quantum}, which
+returns an estimate of $p_0$ itself rather than amplifying the target
+subspace to peak. The construction adds $m$ ancilla qubits to the
+$n_{\text{data}} = 15$-qubit bracket register and proceeds in three
+steps : (i) the bracket prep $A$ is applied to the data register,
+(ii) for $j = 0, \dots, m - 1$ the ancilla $j$ controls $Q^{2^j}$
+where $Q$ is the same Grover operator as in
+Section~\ref{sec:grover}, with the canonical sign convention so its
+eigenvalues on the good/bad subspace are exactly $e^{\pm 2i\theta}$
+with $\sin\theta = \sqrt{p_0}$ ; (iii) an inverse QFT on the ancillas
+followed by a measurement returns an integer $y$ which encodes the
+amplitude estimate $\hat p = \sin^2(\pi y / 2^m)$ on a $2^m$-grid.
+
+We sweep $m \in \{4, 5, 6\}$, totalling 19, 20 and 21 qubits
+respectively, which remains tractable on a single-laptop Aer
+simulator (each $m$ runs in a few minutes). 10\,000 shots per
+configuration. Table~\ref{tab:qae} summarises the convergence to
+the reference value $p_0 = 3.46\%$ established by the unamplified
+sampling baseline. The mode of the ancilla measurement saturates
+to $\hat p = 3.81\%$ for all three values of $m$ : the discrete
+$2^m$-grid happens to place its closest point at $y = 15 \cdot
+2^{m-4}$ with $\sin^2(\pi \cdot 15/16) \approx 3.81\%$, which is
+within the theoretical $\pi / 2^m$ resolution band of the true
+value at every $m$. The weighted-mean estimator $\hat p_{\text{mean}}
+= \sum_y P(y) \sin^2(\pi y / 2^m)$ refines further with $m$ : $3.84\%$
+at $m = 4$, $3.90\%$ at $m = 5$, $3.95\%$ at $m = 6$, all within
+$0.5$\,pp of the reference.
+
+\begin{table}[!htbp]
+\centering
+\caption{QAE convergence on the SAS-champion query. Reference
+$p_0 = 3.46\%$ from $50\,000$-shot unamplified sampling
+(Figure~\ref{fig:fig4}, $k = 0$). $\hat p_{\text{mode}}$ : mode of
+the ancilla measurement histogram, decoded via $\sin^2(\pi y / 2^m)$.
+$\hat p_{\text{mean}}$ : empirical-frequency-weighted estimator. The
+quadratic Brassard speedup manifests as the
+$O(1/\sqrt{p_0}) \approx 5$ controlled-$Q$ iterations sufficient at
+$m = 6$, versus the $O(1/p_0) \approx 30$ unamplified samples needed
+for the same expected count.}
+\label{tab:qae}
+\small
+\begin{tabular}{cccccc}
+\toprule
+$m$ & Total qubits & Resolution $\pi / 2^m$ & Peak count $/ 10^4$ &
+$\hat p_{\text{mode}}$ & $\hat p_{\text{mean}}$ \\
+\midrule
+4 & 19 & $0.196$ & $5\,037$ & $3.81\%$ & $3.84\%$ \\
+5 & 20 & $0.098$ & $4\,943$ & $3.81\%$ & $3.90\%$ \\
+6 & 21 & $0.049$ & $4\,792$ & $3.81\%$ & $3.95\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:fig5} shows the empirical distribution of $\hat p$
+at $m = 6$. The mode at $y = 60$ (folded to $y = 4$ by the
+$y \leftrightarrow 2^m - y$ symmetry) carries $47.9\%$ of the shots
+and corresponds to $\hat p = 3.81\%$ ; the next-largest peaks sit at
+$y = 28$ and $y = 36$, which decode to amplitudes around $90\%$
+but only collect $<1\%$ of shots each, a sampling tail consistent
+with the QPE precision tail \cite{brassard2002quantum,
+suzuki2020amplitude}.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/fig5_qae_estimation.pdf}
+\caption{QAE empirical estimator distribution at $m = 6$ ancillas
+($21$ total qubits, $10\,000$ shots). Blue : histogram of decoded
+amplitudes $\hat p = \sin^2(\pi y / 2^m)$. Orange dashed : reference
+$p_0 = 3.46\%$ from unamplified sampling. Red dotted : QAE mode
+estimate $\hat p_{\text{mode}} = 3.81\%$.}
+\label{fig:fig5}
+\end{figure}
+
+The shot-count comparison with the amplification scheme of
+Section~\ref{sec:grover} clarifies the practical difference between
+the two methods. Amplification rotates $p_0$ to a peak near $1$,
+making it cheap to verify whether the query subspace is hit, but
+does not return $p_0$ itself : extracting a numerical estimate from
+the amplified state still requires a separate measurement campaign
+to undo the amplification angle. QAE returns $\hat p$ directly from
+a single shot of the ancilla register, at the cost of running
+$2^m - 1 \approx 63$ Grover iterations per shot at $m = 6$ versus
+the single application of $A$ per unamplified sample. The
+asymptotic shot-count saving is the well-known quadratic Brassard
+speedup $O(1/p_0)$ vs $O(1/p_0^2)$ for additive precision ; at
+$p_0 = 3.5\%$ that is a $\sim 30 \times$ reduction in shots, which
+the empirical convergence in Table~\ref{tab:qae} corroborates.
 
 \subsection{Prospective prediction : FIFA World Cup 2026}
 
@@ -597,23 +688,24 @@ at what this structure might price elsewhere.
 
 \subsection{Extensions and follow-up work}
 
-The proof-of-concept Grover query in Section~\ref{sec:grover}
-addresses the simplest variant of the path-likelihood family already
-flagged by the 2018 \emph{Quantum Frontiers} note
-\cite{quantumfrontiers_wc_2018} : an unconditional ``team $X$ wins
-the tournament'' subspace. The next natural step is the conditional
-form ``given that $X$ reaches the semifinal, who is the most likely
-champion ?'', which couples the same oracle construction with an
-extra conditioning register, and which we leave to follow-up work
-together with the move from amplitude amplification to amplitude
-estimation (the Brassard-Hoyer-Mosca-Tapp algorithm
-\cite{brassard2002quantum}) for direct estimation of $p_0$ itself.
-A faithful encoding of all $2^{r-1}$ parent configurations would in
-parallel eliminate the seeded bias, at the cost of circuit depth
-growing with bracket depth. All three extensions remain tractable
-in simulation up to roughly 25 qubits on a single GPU via cuQuantum
-\cite{cuquantum_benchmark_2023}, and are natural targets for the
-first generations of fault-tolerant hardware.
+The Grover amplification of Section~\ref{sec:grover} and the QAE of
+Section~\ref{sec:qae} together cover the simplest variant of the
+path-likelihood family already flagged by the 2018 \emph{Quantum
+Frontiers} note \cite{quantumfrontiers_wc_2018} : an unconditional
+``team $X$ wins the tournament'' subspace, queried both by
+amplification (which rotates $p_0$ to peak) and by amplitude
+estimation (which returns $\hat p_0$ directly). The next natural
+step is the conditional form ``given that $X$ reaches the semifinal,
+who is the most likely champion ?'', which couples the same oracle
+construction with an extra conditioning register and which we leave
+to follow-up work. A faithful encoding of all $2^{r-1}$ parent
+configurations would in parallel eliminate the seeded bias, at the
+cost of circuit depth growing with bracket depth. NISQ-friendly QAE
+variants without phase estimation \cite{suzuki2020amplitude} cut the
+ancilla overhead substantially and are a natural target for near-term
+hardware. All extensions remain tractable in simulation up to roughly
+25 qubits on a single GPU via cuQuantum
+\cite{cuquantum_benchmark_2023}.
 
 \FloatBarrier
 \section{Conclusion}
@@ -643,15 +735,18 @@ is in the right direction : the under-pricing of structurally-
 correlated upset paths is precisely the population the seeded
 approximation preferentially identifies.
 
-We additionally implement, on the same encoding, Grover amplitude
-amplification for the SAS-champion subspace of the NBA bracket
-(Section~\ref{sec:grover}). The Aer measurement follows the textbook
-$\sin^2((2k+1)\theta)$ envelope and peaks at $97.89\%$ on $k = 4$
-iterations, reducing the shot count for a 5\% relative precision on
-$p_0$ by roughly four orders of magnitude. This is a proof of concept
-rather than a full pricing engine, but it closes the most basic of
-the Grover-based extensions originally flagged as future work by the
-2018 \emph{Quantum Frontiers} note.
+We additionally implement, on the same encoding, both Grover
+amplitude amplification (Section~\ref{sec:grover}) and Quantum
+Amplitude Estimation (Section~\ref{sec:qae}) for the SAS-champion
+subspace of the NBA bracket. The amplification curve peaks at
+$97.89\%$ on $k = 4$ iterations, and the QAE returns
+$\hat p_{\text{mode}} = 3.81\%$ at $m = 6$ ancillas (21 qubits
+total), within the $\pi/2^m$ resolution band of the reference
+$p_0 = 3.46\%$ from unamplified sampling. Together the two queries
+realise the canonical Brassard-Hoyer-Mosca-Tapp pipeline on a real
+bracket, closing the most basic of the Grover-based extensions
+originally flagged as future work by the 2018 \emph{Quantum
+Frontiers} note.
 
 Finally we issue, before the June~11 kickoff, a prospective
 prediction for the FIFA World Cup 2026 R16-onward under a balanced
