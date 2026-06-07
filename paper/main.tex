@@ -9,15 +9,36 @@
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[margin=1in]{geometry}
+\usepackage{lmodern}            % cleaner body font (vs default CM bitmaps)
+\usepackage{microtype}          % subtle kerning, protrusion, expansion
+\usepackage[a4paper,
+            top=1in, bottom=1in,
+            left=1.15in, right=1.15in]{geometry}
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{graphicx}
 \usepackage{hyperref}
-\hypersetup{colorlinks=true, urlcolor=blue, citecolor=blue}
+\hypersetup{colorlinks=true, urlcolor=blue, citecolor=blue,
+            linkcolor=black}
 \usepackage{booktabs}
 \usepackage{authblk}
 \usepackage{enumitem}
 \usepackage{xcolor}
+\usepackage{placeins}           % \FloatBarrier keeps floats in their section
+
+% Slightly tighten section spacing — default \section spacing is generous and
+% pushes sections to the top of a page with too much air. We keep \subsection
+% spacing untouched (the contrast is what flags hierarchy at a glance).
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{2.0ex plus 0.3ex minus 0.2ex}{1.2ex plus 0.2ex}
+\titlespacing*{\subsection}{0pt}{1.6ex plus 0.3ex minus 0.2ex}{0.8ex plus 0.2ex}
+
+% Avoid orphan / widow lines at page breaks — 10000 is "never".
+\widowpenalty=10000
+\clubpenalty=10000
+
+% Slightly looser caption / float spacing for readability.
+\setlength{\textfloatsep}{14pt plus 4pt minus 2pt}
+\setlength{\intextsep}{12pt plus 3pt minus 2pt}
 
 \title{Bracket-Structured Probability Estimation via Quantum Walks\\
 and Live Prediction-Market Validation}
@@ -69,12 +90,15 @@ flip despite the sport-narrative upset framing --- gives $Q/C =
 0.63\times$ on Vegas reaching the Final.
 
 As a first operational extension of the encoding, we implement Grover
-amplitude amplification on the SAS-champion query of the NBA bracket
-and verify that the empirical $\sin^2((2k+1)\theta)$ amplification
-curve peaks at $97.89\%$ on $k = 4$ iterations (the textbook
-optimum), shrinking the shot-count requirement for a 5\% relative
-precision on the SAS-champion frequency from $\sim$11\,000 shots to
-$\sim$24, a $\sim$$10^4 \times$ empirical reduction.
+amplitude \emph{amplification} (not yet the full amplitude
+\emph{estimation} of Brassard-Hoyer-Mosca-Tapp, which we leave to
+follow-up work) on the SAS-champion query of the NBA bracket. The
+empirical $\sin^2((2k+1)\theta)$ amplification curve peaks at
+$97.89\%$ on $k = 4$ iterations (the textbook optimum), shrinking
+the shot-count requirement for a 5\% relative precision on the
+SAS-champion frequency from $\sim$11\,000 shots to $\sim$24, a
+$\sim$$10^4 \times$ empirical reduction, consistent with the
+quadratic Grover speedup.
 
 A prospective prediction for the FIFA World Cup 2026 (kickoff
 June 11, 2026) is issued in the same form : mid-tier nations (NED,
@@ -100,11 +124,17 @@ participant. Pricing these correlations correctly is a central
 problem for prediction markets and bookmakers, who must aggregate
 expectation over an exponential number of bracket paths to emit
 champion futures odds. Classical Monte Carlo (MC) is the standard
-approach, with the textbook estimator running $N$ independent
-simulations of the full bracket and counting champion outcomes
-\cite{simulate_bracket_pulsquant}. Each simulation is $O(n)$ in the
-number of matches $n$, and Monte-Carlo sample noise on the marginal
-of a low-probability champion scales as $O(1/\sqrt{N})$.
+approach \cite{glasserman2004monte}, with the textbook estimator
+running $N$ independent simulations of the full bracket and counting
+champion outcomes \cite{simulate_bracket_pulsquant}. Each simulation is
+$O(n)$ in the number of matches $n$, and Monte-Carlo sample noise on
+the marginal of a low-probability champion scales as $O(1/\sqrt{N})$.
+On the match-level modelling side, the closest classical references
+are the Dixon-Coles family of Poisson-based football models
+\cite{dixon1997modelling}, and their Bayesian extensions
+\cite{constantinou2017bayesian} : these set the implied match
+probabilities, while the structural correlation between matches is
+typically left to the MC layer.
 
 The 2025--2026 season delivered an unusually rich set of bracket
 upsets to test such an estimator against. In the NBA Playoffs the
@@ -153,7 +183,8 @@ exploit the structural \emph{dependence} between adjacent matches.
 
 A discrete-time quantum walk on a graph $G$ replaces classical
 transition matrices with unitary operators acting on the tensor
-product of a position Hilbert space and a coin Hilbert space.
+product of a position Hilbert space and a coin Hilbert space
+\cite{aharonov1993quantum, kempe2003quantum, portugal2018quantum}.
 For a single-elimination bracket viewed as a balanced binary tree
 of depth $d$ ($n = 2^d$ teams, $2^d - 1$ internal matches), the
 canonical walk traverses the tree level-by-level toward the root,
@@ -173,6 +204,13 @@ algorithm of Brassard, Hoyer, Mosca, and Tapp
 $O(1/p\epsilon)$ queries, a quadratic speedup which Stamatopoulos
 \textit{et al.} \cite{stamatopoulos2020option} exploited for the
 end-to-end pricing of European call options on near-term IBM hardware.
+Subsequent refinements of QAE that remove the phase-estimation
+register \cite{suzuki2020amplitude} cut the resource overhead by
+several factors, making the technique tractable on NISQ devices
+\cite{preskill2018nisq, bharti2022nisq}. A parallel line of work
+extends the same machinery to Monte Carlo speedups more broadly
+\cite{montanaro2015quantum}, with credit-risk pricing as one of the
+early industrial demonstrations \cite{egger2020option}.
 
 \subsection{Quantum-enhanced finance, 2024--2026}
 
@@ -257,7 +295,7 @@ be small. Figure~\ref{fig:fig1} confirms that $Q$ and $C$ agree
 to within max $|\Delta| = 1.48$\,pp (limited by 50k-shot sampling
 noise) across all 8 candidate champions.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\linewidth]{figures/fig1_smoke_test.pdf}
 \caption{Sanity check : 8-team synthetic bracket. Quantum walk (blue)
@@ -283,7 +321,7 @@ The realised outcomes provide ground-truth back-test targets. Table
 Monte Carlo marginals on the realised champion, runner-up and
 semifinalists across the five tournaments.
 
-\begin{table}[h]
+\begin{table}[!htbp]
 \centering
 \caption{Multi-tournament back-test : $P(\text{outcome})$ under the
 seeded quantum walk $Q$ versus unbiased classical MC $C$, for
@@ -364,7 +402,7 @@ marginal distribution side-by-side for $Q$ and $C$, illustrating the
 characteristic redistribution of probability mass from top seeds
 toward bracket-bottom paths.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\linewidth]{figures/fig2_nba_2026.pdf}
 \caption{2026 NBA Playoffs champion distribution (15 qubits). Quantum
@@ -423,7 +461,7 @@ $p_0$ itself rather than just amplifying the target subspace. That
 extension is straightforward given the current encoding and we leave
 it to follow-up work.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/fig4_grover_speedup.pdf}
 \caption{Grover amplification on the SAS-champion query of the 2026
@@ -450,7 +488,7 @@ AUT $+2.2$\,pp, COL $+2.0$\,pp) --- the same redistribution that
 the NBA back-test exhibited, transposed to a draw whose ground
 truth is still six weeks away.
 
-\begin{table}[h]
+\begin{table}[!htbp]
 \centering
 \caption{FIFA World Cup 2026, R16-onward prospective champion
 probability (top 8 entries, sorted by $P_Q$). Actual knockout pairings
@@ -476,6 +514,8 @@ FRA & 5.17\% & 14.63\% & $-9.45$\,pp \\
 \section{Discussion}
 \label{sec:discussion}
 
+\subsection{Scope of the claim}
+
 A word on what is and isn't being claimed. At 15-qubit simulator
 scales we are not racing the classical MC : the
 quantum sampling runs in $0.16$~s and the classical MC in $0.06$~s
@@ -486,6 +526,8 @@ source of bias --- the closed-form check in
 Section~\ref{sec:method}.2 attributes the entire $Q$--$C$ gap to it,
 which means upgrading the encoding (next paragraph) recovers
 unbiased MC behaviour up to the qubit budget.
+
+\subsection{What the encoding captures}
 
 What the construction does buy is structural correlation between
 adjacent matches for free, by entanglement, without explicit path
@@ -502,17 +544,23 @@ Both effects come from the same approximation : there is no free
 lunch here, only a trade-off whose sign is exactly the one that
 matches how prediction markets misprice tournaments.
 
-The prediction-market angle is the practical motivation. Polymarket
-crossed \$44~B in 2025 trading volume on its way to an ICE-backed
-\$9~B valuation, and its futures pricing aggregates over historical
-marginal frequencies rather than over bracket-structural joint
-probabilities. A model that puts higher prior weight on
+\subsection{Prediction-market context}
+
+The prediction-market angle is the practical motivation. Prediction
+markets in general \cite{wolfers2004prediction} and their
+combinatorial extensions \cite{hanson2003combinatorial} are well
+understood as price-discovery instruments, but their bracket-level
+implementations rarely encode the structural correlations between
+matches. Polymarket crossed \$44~B in 2025 trading volume on its way
+to an ICE-backed \$9~B valuation, and its futures pricing aggregates
+over historical marginal frequencies rather than over
+bracket-structural joint probabilities. A model that puts higher prior weight on
 structurally-correlated upset paths would, ex ante, identify the
 mispricings on the underdog side of that liquidity profile --- which
 is also the side where the spreads are widest and the inventory is
 shortest. That is the asymmetry the seeded walk exploits.
 
-\subsection*{A naive question, posed plainly}
+\subsection{A naive question, posed plainly}
 \label{sec:candide}
 
 One can pose the question naively : can a spectator watching a match
@@ -527,11 +575,11 @@ energetically, is an even more hostile environment for coherence
 One notes nonetheless, on re-reading the encoding of
 Section~\ref{sec:method}, that the construction belongs to the same
 mathematical family as objects studied for fifteen years in the
-still-young field of quantum biology. Our quantum walk on the graph
-of matches of a tournament shares its structure with the excitonic
-walk of the FMO photosynthetic complex \cite{engel_2007}, where
-coherent energy packets propagate on a graph of
-conditionally-coupled chromophores. The pair of entangled qubits
+still-young field of quantum biology \cite{lambert2013quantum}. Our
+quantum walk on the graph of matches of a tournament shares its
+structure with the excitonic walk of the FMO photosynthetic complex
+\cite{engel_2007, plenio2008dephasing}, where coherent energy packets
+propagate on a graph of conditionally-coupled chromophores. The pair of entangled qubits
 that encodes a conditional matchup in our construction shares its
 structure with the pair of entangled radicals that migratory birds
 sustain in their retinal cryptochrome for geomagnetic orientation
@@ -546,6 +594,8 @@ both at the femtosecond scale of energy transport in leaves and at
 the hourly scale of a single-elimination bracket seems however
 worth a mention, less as an argument for this paper than as a hint
 at what this structure might price elsewhere.
+
+\subsection{Extensions and follow-up work}
 
 The proof-of-concept Grover query in Section~\ref{sec:grover}
 addresses the simplest variant of the path-likelihood family already
@@ -565,6 +615,7 @@ in simulation up to roughly 25 qubits on a single GPU via cuQuantum
 \cite{cuquantum_benchmark_2023}, and are natural targets for the
 first generations of fault-tolerant hardware.
 
+\FloatBarrier
 \section{Conclusion}
 
 We have written down a quantum-walk encoding for bracket-structured
