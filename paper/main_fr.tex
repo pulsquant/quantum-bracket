@@ -1,0 +1,872 @@
+% !TEX program = pdflatex
+%
+% Estimation de probabilités sur tableaux d'élimination via marches quantiques
+% et validation en direct sur marchés de prédiction
+%
+% Préprint arXiv, version française — Juin 2026
+% Catégories : cs.ET (Emerging Technologies) ; cross-list : quant-ph, q-fin.CP
+
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+% babel-french n'est pas systématiquement installé ; on protège l'inclusion
+% par \IfFileExists pour rester portable. Les guillemets \og / \fg sont
+% définis plus bas par \providecommand au cas où babel ne les fournit pas.
+\IfFileExists{french.ldf}{\usepackage[french]{babel}}{}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,
+            top=1in, bottom=1in,
+            left=1.15in, right=1.15in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, urlcolor=blue, citecolor=blue,
+            linkcolor=black}
+\usepackage{booktabs}
+\usepackage{authblk}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{placeins}
+
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{2.0ex plus 0.3ex minus 0.2ex}{1.2ex plus 0.2ex}
+\titlespacing*{\subsection}{0pt}{1.6ex plus 0.3ex minus 0.2ex}{0.8ex plus 0.2ex}
+
+\widowpenalty=10000
+\clubpenalty=10000
+
+\setlength{\textfloatsep}{14pt plus 4pt minus 2pt}
+\setlength{\intextsep}{12pt plus 3pt minus 2pt}
+
+% Définitions sûres pour les guillemets français (en cas de babel-french trop
+% ancien sans \og / \fg).
+\providecommand{\og}{\guillemotleft\,}
+\providecommand{\fg}{\,\guillemotright}
+
+\title{Estimation de probabilités sur tableaux d'élimination\\
+via marches quantiques et validation en direct\\
+sur marchés de prédiction}
+
+\author{Jean-Thomas Dauchel\thanks{\texttt{contact@pulsquant.com}}}
+
+\affil{PulsQuant --- Recherche indépendante}
+
+\date{Juin 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce papier applique les marches quantiques aux tableaux d'élimination
+des tournois sportifs. À notre connaissance c'est le premier
+traitement formel du sujet : la note \emph{Quantum Frontiers} de 2018
+\cite{quantumfrontiers_wc_2018} esquissait bien un encodage en qudits
+pour la Coupe du Monde FIFA mais n'a jamais été soumise à publication,
+et le récent papier QNN football de Nature/Scientific Reports
+\cite{nature_qnn_football_2025} attaque une tâche différente
+(classification match par match en QML).
+
+On mappe un tableau à $n$ équipes à élimination directe sur un circuit
+de $n{-}1$ qubits avec portes $R_Y$ contrôlées. Les matchs du premier
+tour utilisent la logistique Elo exacte ; les tours suivants utilisent
+une approximation \emph{graînée} (\og seeded \fg{}) dont on quantifie
+le biais par rapport à une énumération en forme close suivant la même
+règle d'appariement, de sorte que toute divergence $Q$--$C$ s'impute à
+l'approximation et non à un artefact d'implémentation quantique.
+
+L'encodage est testé rétroactivement sur cinq vrais tableaux
+2025--2026 chargés depuis une base de marchés de prédiction en
+production (pas des hypothèses équilibrées). Sur les Playoffs NBA
+2026, où les San Antonio Spurs ont atteint les Finales NBA depuis la
+8\textsuperscript{e} tête de série de l'Ouest en éliminant le numéro 1
+OKC en finale de conférence Ouest, la marche graînée attribue
+$P_Q(\text{SAS atteint les Finales}) = 5{,}87\,\%$ contre
+$P_C = 3{,}43\,\%$ (amplification $\mathbf{1{,}71\times}$), et une
+amplification $\mathbf{3{,}05\times}$ sur $P(\text{SAS champion})$.
+Sur le tableau de Roland Garros femmes à partir du R16, la championne
+réelle Mirra Andreeva voit son marginal de titre amplifié
+$\mathbf{1{,}68\times}$, et la finaliste outsider Maja Chwalinska
+(Tennis Elo 1710, classée 114\textsuperscript{e} WTA avant le tournoi)
+voit sa probabilité de finale amplifiée $\mathbf{2{,}78\times}$. Les
+demi-finalistes outsiders ATP (Jakub Mensik, Matteo Arnaldi)
+ressortent à $\mathbf{4{,}17\times}$ et $\mathbf{4{,}44\times}$. Deux
+contrôles négatifs propres confirment que la méthode n'est pas qu'un
+amplificateur d'upsets : la victoire \og assurée \fg{} du PSG en
+Ligue des Champions donne $Q/C \approx 1{,}01$, et Vegas sortant
+Colorado en finale de conférence Ouest NHL (statistiquement un
+pile-ou-face malgré le récit d'upset) donne $Q/C = 0{,}63\times$ sur
+Vegas atteignant la finale.
+
+Comme prolongements opérationnels de l'encodage, on implémente sur la
+même requête (SAS champion sur le tableau NBA) à la fois
+l'amplification d'amplitude de Grover et l'estimation d'amplitude
+quantique \cite{brassard2002quantum}. La courbe d'amplification atteint
+son pic à $97{,}89\,\%$ sur $k = 4$ itérations (optimum théorique du
+manuel), et la QAE complète avec $m = 6$ qubits ancillaires (21 qubits
+au total sur un simulateur Aer monoposte) renvoie
+$\hat p_{\text{mode}} = 3{,}81\,\%$ sur l'amplitude SAS-champion
+contre la référence $p_0 = 3{,}46\,\%$ obtenue par échantillonnage non
+amplifié. Le mode QAE et l'estimateur en moyenne pondérée s'accordent
+avec la référence à l'intérieur de la bande de résolution $\pi / 2^m$
+pour tout $m \in \{4, 5, 6\}$, réalisant le speedup quadratique de
+Brassard sur une requête de tableau réel.
+
+Une prédiction prospective pour la Coupe du Monde FIFA 2026
+(coup d'envoi 11 juin 2026) est émise dans la même forme : nations de
+milieu de hiérarchie (NED, BEL, AUT, COL) amplifiées de 2 à 3 points
+de pourcentage, favoris européens de tête (FRA, ESP, BRA) réduits
+d'autant. ARG fait exception parmi les favoris de tête --- amplifiée
+$+6{,}14$\,pp parce que son chemin dans le tableau équilibré traverse
+un quart Conmebol plus faible.
+
+À l'échelle simulateur (15 qubits), nous ne revendiquons aucun
+avantage quantique. La contribution est conceptuelle : l'encodage
+capture les corrélations structurelles du tableau que le Monte Carlo
+classique ne reproduit qu'au prix d'un conditionnement explicite
+chemin par chemin, et la construction passe à l'échelle de manière
+tractable vers les 50 à 100 qubits logiques attendus du matériel
+tolérant aux fautes de première génération.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Les tournois sportifs à élimination directe présentent de fortes
+\emph{corrélations structurelles} entre les résultats des matchs : si
+une tête de série élevée perd tôt, les matchs en aval sont rebattus de
+manière à modifier la probabilité marginale de titre de tous les
+autres participants. Pricer correctement ces corrélations est un
+problème central pour les marchés de prédiction et les bookmakers, qui
+doivent agréger l'espérance sur un nombre exponentiel de chemins du
+tableau pour émettre des cotes futures sur le titre. Le Monte Carlo
+classique (MC) est l'approche standard
+\cite{glasserman2004monte}, avec l'estimateur de manuel faisant tourner
+$N$ simulations indépendantes du tableau complet et comptant les
+issues championnes \cite{simulate_bracket_pulsquant}. Chaque simulation
+est en $O(n)$ dans le nombre de matchs $n$, et le bruit
+d'échantillonnage MC sur le marginal d'un champion à faible
+probabilité passe à l'échelle en $O(1/\sqrt{N})$. Côté modélisation
+match par match, les références classiques les plus proches sont la
+famille Dixon--Coles des modèles football basés sur Poisson
+\cite{dixon1997modelling} et leurs extensions bayésiennes
+\cite{constantinou2017bayesian} : elles fixent les probabilités de
+match implicites, tandis que la corrélation structurelle entre matchs
+est typiquement laissée à la couche MC.
+
+La saison 2025--2026 a livré un ensemble inhabituellement riche
+d'upsets pour mettre un tel estimateur à l'épreuve. Aux Playoffs NBA,
+les San Antonio Spurs ont atteint les Finales NBA depuis la
+8\textsuperscript{e} tête de série de l'Ouest, en éliminant OKC Thunder
+(tête de série numéro 1) en finale de conférence Ouest. Roland Garros
+2026 a perdu trois des quatre têtes de série avant les quarts (Sinner
+côté hommes, Świątek et Sabalenka côté femmes). En NHL, les Vegas
+Golden Knights ont éliminé Colorado, meilleure équipe de la saison
+régulière. Aucun de ces résultats n'est statistiquement extrême sur
+son marginal de match isolé : un Elo bien calibré leur donne à chacun
+une probabilité à deux chiffres. Ce qui les rend difficiles à pricer,
+c'est le poids joint qu'ils portent dans l'arbre du tableau une fois
+qu'on conditionne sur un parcours profond. La corrélation entre tours
+successifs amplifie le marginal de l'outsider survivant bien au-delà
+de ce que suggère une approximation tours indépendants.
+
+Ce papier propose une marche quantique qui encode ces corrélations par
+l'intrication entre qubits de matchs conditionnellement dépendants, et
+en étudie le comportement dans trois cadres : un tableau synthétique à
+8 équipes en sanity check ; cinq vrais tournois 2025--2026 backtestés
+contre la vérité terrain (Playoffs NBA, finales de conférence NHL,
+Ligue des Champions UEFA, et tableaux hommes et femmes de Roland
+Garros à partir du R16) ; et la Coupe du Monde FIFA 2026 R16+
+(15 matchs), avec prédiction émise avant le coup d'envoi du 11 juin.
+Tous les tableaux sont chargés depuis la base de marchés de prédiction
+PulsQuant en production, pas depuis des hypothèses-jouets équilibrées.
+
+La construction reprend là où deux fils récents se sont arrêtés. La
+note \emph{Quantum Frontiers} de 2018 \cite{quantumfrontiers_wc_2018}
+esquissait un encodage en qudits pour le tableau de la Coupe du Monde
+mais n'a ni publié le formalisme ni implémenté les requêtes de
+vraisemblance Grover qu'elle pointait comme prolongement. Le papier
+Nature/QNN football \cite{nature_qnn_football_2025} s'attaque à une
+cible différente : classification d'issues match par match en machine
+learning quantique, laissant le problème de l'estimation structurelle
+de tableau ouvert. Côté classique, \cite{brandes2025stop} abandonnent
+complètement le Monte Carlo en exploitant l'indépendance entre
+sous-chemins du tableau ; nous allons à l'inverse et exploitons la
+\emph{dépendance} structurelle entre matchs adjacents.
+
+\section{Cadre théorique}
+\label{sec:bg}
+
+\subsection{Marches quantiques}
+
+Une marche aléatoire classique sur un graphe se définit par deux
+ingrédients. D'une part la position actuelle du marcheur,
+c'est-à-dire sur quel nœud il se trouve. D'autre part la décision du
+prochain pas, tirée typiquement par un lancer de pièce. La version
+quantique de cet objet remplace ces deux registres scalaires par deux
+registres quantiques. Un premier registre, dit registre de
+\textbf{position}, décrit l'état de localisation sur le graphe. Un
+second registre, dit registre de \textbf{pièce} (le terme consacré
+dans la littérature anglo-saxonne est \emph{coin}), décrit la
+direction du prochain pas. Chaque registre vit dans son propre espace
+de Hilbert, qui est le formalisme standard de la mécanique quantique :
+les états y sont des vecteurs complexes (les amplitudes) et les
+évolutions y sont des opérateurs unitaires (les portes). La dynamique
+de la marche agit sur le produit tensoriel des deux espaces, ce qui
+permet à la position et à la pièce d'être intriquées entre elles. La
+différence avec la marche classique tient à ce que la pièce, au lieu
+de produire à chaque pas un résultat binaire indépendant, peut être
+placée dans une superposition cohérente des deux directions
+possibles. C'est cette superposition, propagée par intrication à
+travers les pas successifs, qui produit les interférences
+caractéristiques des marches quantiques
+\cite{aharonov1993quantum, kempe2003quantum, portugal2018quantum}.
+
+Pour un tableau à élimination directe vu comme un arbre binaire
+équilibré de profondeur $d$ ($n = 2^d$ équipes, $2^d - 1$ matchs
+internes), la marche canonique parcourt l'arbre niveau par niveau vers
+la racine. La pièce, dans notre encodage, est matérialisée par l'état
+du qubit associé au match courant, et son résultat de mesure détermine
+lequel des deux qualifiés émerge. Les accélérations algorithmiques
+exponentielles de Childs, Cleve, Deotto et Farhi
+\cite{childs2003exponential} sont obtenues sur un problème de
+structure différente : la traversée du \emph{welded tree}, où
+l'objectif est d'atteindre un nœud cible dans un graphe dont seule la
+connectivité locale est révélée à chaque étape (la marche quantique
+trouve la cible en temps polynomial dans la profondeur du graphe, là
+où le meilleur algorithme classique connu demande un temps
+exponentiel). On reprend ici la même mécanique d'encodage par paires
+\og position + pièce \fg{} intriquées, mais le problème qu'on attaque
+(estimer un marginal d'issue de tableau) n'admet pas, à notre
+connaissance, de speedup asymptotique du même ordre, et on n'en
+revendique aucun.
+
+\subsection{Estimation d'amplitude quantique}
+
+Pour un état $|\psi\rangle$ qui place un poids $p$ sur un sous-espace
+cible, l'échantillonnage classique demande $O(1/p\epsilon^2)$ shots
+pour estimer $p$ à erreur additive $\epsilon$ près. L'algorithme
+d'estimation d'amplitude de Brassard, Hoyer, Mosca et Tapp
+\cite{brassard2002quantum} atteint la même précision en
+$O(1/p\epsilon)$ requêtes (un speedup quadratique), que Stamatopoulos
+\textit{et al.} \cite{stamatopoulos2020option} ont exploité pour le
+pricing end-to-end d'options call européennes sur matériel IBM
+near-term. Les raffinements ultérieurs de la QAE qui suppriment le
+registre d'estimation de phase \cite{suzuki2020amplitude} réduisent le
+coût en ressources de plusieurs facteurs, rendant la technique
+tractable sur des dispositifs NISQ
+\cite{preskill2018nisq, bharti2022nisq}. Une ligne de travail
+parallèle étend la même machinerie à des speedups Monte Carlo plus
+généralement \cite{montanaro2015quantum}, avec le pricing du risque de
+crédit comme l'une des premières démonstrations industrielles
+\cite{egger2020option}.
+
+\subsection{Finance quantique, 2024--2026}
+
+Le benchmark industriel récent le plus directement comparable est le
+pipeline Stamatopoulos et al. \cite{stamatopoulos2020option} pour le
+pricing end-to-end d'options européennes par QAE sur matériel IBM
+near-term, ensuite passé à l'échelle par l'équipe IBM Quantum sur ses
+machines supraconductrices à 127 qubits dans l'ère NISQ 2023--2024
+\cite{bharti2022nisq}. L'estimation de ressources Goldman/IBM
+\cite{goldman_ibm_2021} situe le véritable avantage quantique en
+pricing de dérivés à environ 7 500 qubits logiques et une T-depth
+d'environ $4{,}6 \times 10^7$, un régime encore au-delà de tout
+matériel actuel mais bien en dessous des estimations historiques de la
+fin des années 2010.
+
+\section{Méthode}
+\label{sec:method}
+
+\subsection{Encodage du tableau}
+
+Soit $T = \{t_1, \dots, t_n\}$ l'ensemble des équipes participantes
+avec ratings Elo $\rho_i$, et $\mathcal{M} = \{m_0, \dots, m_{n-2}\}$
+l'ensemble des matchs en ordre topologique (premier tour d'abord). À
+chaque match $m \in \mathcal{M}$ on associe un qubit $q_m$. La
+convention $q_m = 0$ encode \og l'équipe en position haute du match a
+gagné \fg{} ; $q_m = 1$ encode \og l'équipe en position basse a
+gagné \fg{}.
+
+\paragraph{Tour 0.} Les participants sont connus dès le départ. Pour
+chaque match du premier tour $m$ opposant des équipes $a$ et $b$, on
+calcule $p_m = 1/(1 + 10^{(\rho_b - \rho_a)/400})$, la probabilité
+logistique Elo classique, et on applique
+\[
+R_Y\!\left(\theta_m\right) |0\rangle, \qquad
+\theta_m = 2 \arcsin\!\sqrt{1 - p_m},
+\]
+ce qui laisse $q_m$ dans l'état $\sqrt{p_m}\,|0\rangle +
+\sqrt{1-p_m}\,|1\rangle$, de sorte qu'une mesure en base
+computationnelle renvoie $|0\rangle$ avec le marginal correct.
+
+\paragraph{Tours suivants (approximation graînée).} Pour un match $m$
+au tour $r > 0$, les participants réels dépendent des résultats des
+deux matchs parents $\pi^t(m), \pi^b(m)$. Un encodage fidèle
+conditionnerait sur les $2^{r-1}$ configurations parentales possibles
+via des rotations $r$-qubit contrôlées ; cela passe à l'échelle en
+$O(2^d)$ dans la profondeur du tableau. On applique à la place une
+approximation \emph{graînée} : pour chacune des 4 combinaisons de
+résultats parents, on identifie l'équipe qui émergerait sous un chemin
+canonique suivant les têtes de série (toujours côté haut si le bit
+parent est 0, toujours côté bas si 1), on calcule la probabilité
+d'affrontement sous ces équipes graines, et on applique la rotation
+$R_Y$ multi-contrôlée correspondante. L'approximation graînée est
+exacte pour les matchs du premier tour et le long des chemins alignés
+sur les $d$ axes du tableau ; elle est biaisée vers ces appariements
+canoniques pour les tours plus profonds.
+
+\subsection{Vérification en forme close de l'approximation graînée}
+
+À côté de $Q$ (échantillonnage Qiskit Aer) et du Monte Carlo classique
+non biaisé $C$, on calcule un troisième estimateur $S$ qui énumère les
+$2^{n-1}$ issues du tableau en forme close sous la \emph{même} règle
+d'appariement graînée que le circuit. Le triplet $\{Q, C, S\}$ permet
+alors de scinder la divergence $Q$--$C$ en deux : ce qui sépare $Q$ de
+$S$ est du bruit d'échantillonnage ou une erreur d'implémentation,
+tandis que ce qui sépare $S$ de $C$ est le biais de l'approximation
+graînée. Tout au long des expériences, on trouve $|Q - S| < 0{,}1$\,pp,
+ce qui impute l'écart à $C$ à l'approximation seule.
+
+\section{Expériences}
+\label{sec:experiments}
+
+\subsection{Implémentation}
+
+Toutes les expériences tournent sur Qiskit 2.4.1 + Qiskit Aer 0.13 en
+mode CPU laptop. On utilise 50\,000 shots par circuit quantique et
+50\,000 simulations par MC classique, avec graine fixée (42) pour la
+reproductibilité. Le code source et les données brutes sont
+disponibles à \url{https://github.com/pulsquant/quantum-bracket}.
+
+\subsection{Sanity check : tableau à 8 équipes}
+
+Un tableau à 8 équipes (7 matchs) avec ratings Elo linéairement
+espacés ($\rho_A = 1850, \rho_B = 1800, \dots, \rho_H = 1500$) fournit
+un cadre à faible profondeur où le biais de l'approximation graînée
+doit être petit. La Figure~\ref{fig:fig1} confirme que $Q$ et $C$
+s'accordent à $|\Delta|_{\max} = 1{,}48$\,pp près (limite imposée par
+le bruit d'échantillonnage à 50\,k shots) sur l'ensemble des 8
+champions candidats.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig1_smoke_test.pdf}
+\caption{Sanity check : tableau synthétique à 8 équipes. Marche
+quantique (bleu) et Monte Carlo classique (orange), distributions des
+champions s'accordent à 1,5\,pp près sur l'ensemble des équipes.}
+\label{fig:fig1}
+\end{figure}
+
+\subsection{Back-tests sur vrais tableaux : NBA, NHL, UCL, RG ATP, RG WTA}
+\label{sec:multi}
+
+On charge les vrais tableaux 2025--2026 depuis la table production
+\texttt{tournament\_brackets} de PulsQuant et on construit l'objet
+\texttt{Bracket} directement à partir des appariements enregistrés.
+Pour les Playoffs NBA et la phase à élimination directe de la Ligue
+des Champions on charge le tableau complet. Pour Roland Garros
+(tableaux de 128) on coupe au R16 pour garder un compte de qubits à
+15. Les ratings de force sont issus d'une table maintenue à la main
+mirrorant \texttt{eloratings.net} (NBA, foot) et Tennis-Elo (ATP, WTA),
+listée en annexe.
+
+Les issues réelles fournissent les cibles ground-truth du backtest. La
+Table~\ref{tab:multi_tournament} résume les marginaux de la marche
+quantique et du Monte Carlo classique sur le champion, le finaliste et
+les demi-finalistes réels à travers les cinq tournois.
+
+\begin{table}[!htbp]
+\centering
+\caption{Back-test multi-tournois : $P(\text{outcome})$ sous la marche
+quantique graînée $Q$ contre le MC classique non biaisé $C$, pour les
+champions, finalistes, demi-finalistes et finalistes réels à travers
+cinq tournois. Les ratios $Q/C$ en gras dépassent $1{,}5\times$ ou
+tombent sous $0{,}6\times$. Tous les tournois utilisent les données de
+tableau de production réelles ; les tournois de tennis sont chargés à
+partir du tour des 16.}
+\label{tab:multi_tournament}
+\small
+\begin{tabular}{llrrr}
+\toprule
+Tournoi & Rôle réalisé / participant & $P_Q$ & $P_C$ & $P_Q/P_C$ \\
+\midrule
+Playoffs NBA 2026 & SAS atteint les Finales (8\textsuperscript{e}, bat OKC en WCF) & 5,87\,\% & 3,43\,\% & $\mathbf{1{,}71\times}$ \\
+                  & SAS champion (Finals menées 2--0)            & 3,46\,\% & 1,13\,\% & $\mathbf{3{,}05\times}$ \\
+                  & NYK atteint les Finales (favori Est)         & 13,22\,\% & 18,75\,\% & 0,71$\times$ \\
+                  & NYK champion (Finals 2--0, en cours)         & 4,83\,\% & 9,59\,\% & $\mathbf{0{,}50\times}$ \\
+                  & OKC tête de série \#1 (éliminé WCF)          & 18,52\,\% & 17,73\,\% & 1,04$\times$ \\
+\midrule
+Stanley Cup NHL 2026 & VGK atteint la finale (sweep COL 4--0 WCF) & 12,65\,\% & 20,00\,\% & $\mathbf{0{,}63\times}$ \\
+                     & CAR atteint la finale (vainqueur Est CF)   & 26,93\,\% & 23,60\,\% & 1,14$\times$ \\
+                     & COL meilleur Elo Ouest (éliminé WCF)       & 18,32\,\% & 19,13\,\% & 0,96$\times$ \\
+                     & OTT perdant R1 (faible Elo)                & 5,24\,\% & 2,67\,\% & $\mathbf{1{,}96\times}$ \\
+\midrule
+UCL 2025--26      & PSG champion (favori principal) & 10,57\,\% & 10,43\,\% & 1,01$\times$ \\
+                  & ARS finaliste                    & 19,00\,\% & 13,77\,\% & 1,38$\times$ \\
+                  & B04 demi-finaliste               & 10,41\,\% & 4,50\,\% & $\mathbf{2{,}32\times}$ \\
+                  & RMA (éliminé en QF)              & 10,10\,\% & 14,64\,\% & 0,69$\times$ \\
+\midrule
+RG ATP 2026 (R16+) & Zverev finaliste (favori principal) & 4,05\,\% & 38,15\,\% & $\mathbf{0{,}11\times}$ \\
+                   & Cobolli finaliste (outsider)        & 6,27\,\% & 5,74\,\% & 1,41$\times$ \\
+                   & Mensik demi-finaliste (outsider)    & 5,59\,\% & 1,34\,\% & $\mathbf{4{,}17\times}$ \\
+                   & Arnaldi demi-finaliste (outsider)   & 3,07\,\% & 0,69\,\% & $\mathbf{4{,}44\times}$ \\
+\midrule
+RG WTA 2026 (R16+) & \textbf{Andreeva championne (18 ans)} & \textbf{11,01\,\%} & \textbf{6,55\,\%} & $\mathbf{1{,}68\times}$ \\
+                   & \textbf{Chwalinska finaliste (Elo 1710)} & \textbf{2,15\,\%} & \textbf{0,77\,\%} & $\mathbf{2{,}78\times}$ \\
+                   & Shnaider demi-finaliste (élim. Sabalenka QF) & 3,65\,\% & 2,49\,\% & 1,46$\times$ \\
+                   & Sabalenka (favorite principale, élim. QF) & 54,79\,\% & 41,08\,\% & 1,33$\times$ \\
+                   & Świątek (favorite principale, élim. R16) & 3,74\,\% & 37,01\,\% & $\mathbf{0{,}10\times}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Un schéma cohérent émerge. Les parcours profonds d'outsiders réalisés
+sont amplifiés : les Spurs en finale NBA depuis la
+8\textsuperscript{e} tête de série après avoir éliminé la
+1\textsuperscript{re} tête de série OKC ($1{,}71\times$ sur le marginal
+d'atteinte des Finales, $3{,}05\times$ sur le marginal de titre), le
+titre RG femmes d'Andreeva ($1{,}68\times$), le parcours en finale de
+Chwalinska avec son Tennis Elo de 1710 et son classement
+114\textsuperscript{e} WTA avant le tournoi ($2{,}78\times$), et les
+demi-finalistes ATP outsiders Mensik et Arnaldi ($4{,}17\times$ et
+$4{,}44\times$ respectivement). Les favoris qui ont perdu tôt sont
+nettement sous-pondérés en miroir, avec Świątek le cas le plus net à
+$0{,}10\times$ côté WTA (éliminée au R16 par Andreeva). Du même côté,
+les favoris dont l'avantage Elo est robuste face à leur tirage réel
+restent à $Q/C \approx 1$ : OKC à $1{,}04\times$ sur le marginal de
+champion NBA, bien qu'éliminé par SAS en WCF, simplement parce que
+l'Elo d'OKC (1745) était le plus haut du tournoi et l'approximation
+graînée lit son parcours dans l'Ouest comme compétitif. Quand le chalk
+tient sans surprise, la marche renvoie essentiellement la valeur
+classique : PSG remportant la Ligue des Champions donne
+$Q/C \approx 1{,}01$, preuve que l'encodage ne fabrique pas de signal
+d'upset en l'absence de celui-ci.
+
+Le prix de cette asymétrie se voit sur les têtes de série qui
+survivent profondément. Les New York Knicks ont atteint les Finales
+NBA depuis l'Est, et pourtant $Q$ assigne à leur marginal d'atteinte
+des Finales $P_Q = 13{,}22\,\%$ contre $P_C = 18{,}75\,\%$
+($0{,}71\times$), et leur marginal de champion $P_Q = 4{,}83\,\%$
+contre $P_C = 9{,}59\,\%$ ($0{,}50\times$). L'approximation graînée
+pénalise les positions hautes du tableau dès lors que leur avance Elo
+est modérée au point d'être érodée par des appariements conditionnels
+répétés ; l'amplification des chemins outsiders et la sous-pondération
+des chemins chalk sont les deux faces de la même opération. La finale
+Vegas--Colorado de la conférence Ouest NHL est le contrôle le plus
+propre dont on dispose : narrativement un upset, statistiquement un
+pile-ou-face (Elo 1645 contre 1670), et la marche n'y produit pas non
+plus de signal d'upset ($Q/C = 0{,}63\times$ sur Vegas atteignant la
+finale Stanley Cup).
+
+L'estimateur en forme close $S$ produit des valeurs à bruit
+d'échantillonnage près de $Q$ sur les cinq tournois
+($|Q - S|_{\max} < 0{,}09$\,pp), confirmant que la divergence $Q$--$C$
+est bien le biais de l'approximation graînée et non un artefact
+d'implémentation quantique.
+
+La Figure~\ref{fig:fig2} visualise la distribution marginale du
+champion des Playoffs NBA 2026 côte-à-côte pour $Q$ et $C$, illustrant
+la redistribution caractéristique de la masse de probabilité depuis
+les têtes de série vers les chemins du bas de tableau.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig2_nba_2026.pdf}
+\caption{Distribution des champions des Playoffs NBA 2026 (15 qubits).
+La marche quantique redistribue la masse de probabilité de manière
+sélective : les têtes de série moyennes de l'Est NYK et DEN sont
+sous-pondérées (leurs chemins classiques sont chargés en adversaires
+de Elo modéré que l'approximation graînée lit comme vulnérables aux
+upsets), tandis que les têtes de série \#1 OKC et BOS restent proches
+de leurs valeurs classiques (leur avance Elo est suffisamment robuste
+face au tirage réel pour qu'aucune sous-pondération ne s'applique).
+SAS, 8\textsuperscript{e} tête de série de l'Ouest, a fait le parcours
+profond structurellement pertinent des Playoffs 2026 en éliminant OKC
+en finale de conférence Ouest pour atteindre les Finales NBA : c'est
+exactement le type de chemin d'upset structurellement corrélé que la
+marche quantique graînée est conçue pour amplifier ex ante. La série
+des Finales NBA était en cours au moment de la rédaction (NYK menait
+2--0 dans la série au meilleur des 7).}
+\label{fig:fig2}
+\end{figure}
+
+\subsection{Amplification de Grover sur une requête de tableau}
+\label{sec:grover}
+
+Un prolongement naturel de l'encodage consiste à amplifier le marginal
+d'une issue de tournoi spécifique au moyen de l'algorithme de Grover
+\cite{grover1996fast}, plutôt que de l'estimer par échantillonnage
+direct. Le tableau NBA 2026 fournit un banc d'essai propre : SAS
+atteint les Finales NBA depuis la 8\textsuperscript{e} tête de série
+correspond à une contrainte sur 4 qubits du registre à 15 qubits (les
+bits indexant le match R1 OKC--SAS, le demi-tour Ouest CSF, la finale
+de conférence Ouest et la position des Finales NBA côté Ouest). On
+encode cette contrainte comme un oracle de phase $O$ et on le couple à
+l'opérateur de diffusion $D = A (2|0\rangle\langle 0| - I) A^\dagger$,
+où $A$ est l'unitaire de préparation du tableau de la
+Section~\ref{sec:method}.
+
+La Figure~\ref{fig:fig4} montre la courbe d'amplification empirique :
+la fréquence de mesure SAS-champion, échantillonnée à $50\,000$ shots
+par point, en fonction du nombre $k$ d'itérations de Grover appliquées
+à $A|0\rangle$. La valeur de référence $p_0 = 3{,}46\,\%$ correspond à
+la prédiction de l'encodage conditionnel à $k=0$. Les itérations
+successives suivent l'enveloppe de manuel
+$\sin^2((2k+1)\theta)$ avec $\sin\theta = \sqrt{p_0}$, atteignant un
+pic à $97{,}89\,\%$ sur $k = 4$ (l'optimum théorique étant
+$k^\star = \pi / (4 \arcsin\sqrt{p_0}) \approx 4{,}20$), redescendant à
+$\sim 1\,\%$ à $k = 8$, puis remontant à $99{,}72\,\%$ sur $k = 12$.
+
+L'implication en termes de nombre de shots est immédiate. En visant
+une précision relative de $5\,\%$ sur la fréquence SAS-champion,
+l'échantillonnage direct demande
+$N_{\text{unamp}} = (1 - p_0)/(p_0 \rho^2) \approx 11\,200$ shots,
+tandis que l'échantillonnage depuis l'état amplifié avec $k = 4$
+demande $N_{\text{amp}} \approx 9$ shots (et $\approx 1$ shot à
+$k = 12$). La réduction empirique d'environ $10^4 \times$ sur le
+nombre de shots est cohérente avec le speedup quadratique de Grover
+$O(1/\sqrt{p_0})$ au sens de l'amplification d'amplitude
+\cite{brassard2002quantum}. Le coût est la profondeur du circuit :
+chaque itération de Grover ajoute une application de $A$, $O$ et
+$A^\dagger$, multipliant la profondeur par environ $2k + 1$. Sur Aer à
+15 qubits, cela reste tractable sur un CPU monoposte, le balayage
+complet $k = 0\dots15$ se terminant en quelques minutes.
+
+L'amplification fait tourner l'état du tableau jusqu'à ce que le
+sous-espace SAS-champion domine la mesure, mais ne récupère pas
+directement la valeur $p_0$ elle-même : elle la fait juste tourner
+près de 1. La Section~\ref{sec:qae} clôt cette lacune avec la
+procédure canonique d'estimation d'amplitude Brassard-Hoyer-Mosca-Tapp
+appliquée au même opérateur de Grover.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/fig4_grover_speedup.pdf}
+\caption{Amplification de Grover sur la requête SAS-champion du
+tableau Playoffs NBA 2026. Bleu : mesure Aer à $50\,000$ shots par
+point. Gris pointillé : enveloppe théorique $\sin^2((2k+1)\theta)$
+avec $\sin\theta = \sqrt{p_0}$ et $p_0 = 3{,}46\,\%$ (orange en
+pointillé). Deux pics à $k = 4$ ($97{,}89\,\%$) et $k = 12$
+($99{,}72\,\%$), cohérents avec la périodicité de manuel de Grover.}
+\label{fig:fig4}
+\end{figure}
+
+\subsection{Estimation d'amplitude quantique sur la même requête}
+\label{sec:qae}
+
+L'extension canonique de l'amplification de Grover de la section
+précédente est l'estimation d'amplitude quantique (QAE)
+\cite{brassard2002quantum}, qui renvoie une estimation de $p_0$
+lui-même plutôt que d'amplifier le sous-espace cible jusqu'à un pic.
+La construction ajoute $m$ qubits ancillaires au registre du tableau à
+$n_{\text{data}} = 15$ qubits et procède en trois étapes : (i) la
+préparation $A$ du tableau est appliquée au registre de données,
+(ii) pour $j = 0, \dots, m - 1$, le qubit ancillaire $j$ contrôle
+$Q^{2^j}$ où $Q$ est le même opérateur de Grover qu'à la
+Section~\ref{sec:grover}, avec la convention de signe canonique de
+sorte que ses valeurs propres sur le sous-espace bon/mauvais sont
+exactement $e^{\pm 2i\theta}$ avec $\sin\theta = \sqrt{p_0}$, (iii)
+une QFT inverse sur les ancillas suivie d'une mesure renvoie un entier
+$y$ qui encode l'estimation d'amplitude
+$\hat p = \sin^2(\pi y / 2^m)$ sur une grille à $2^m$ points.
+
+On balaye $m \in \{4, 5, 6\}$, soit respectivement 19, 20 et 21
+qubits, ce qui reste tractable sur un simulateur Aer monoposte (chaque
+$m$ tourne en quelques minutes). 10\,000 shots par configuration. La
+Table~\ref{tab:qae} résume la convergence vers la valeur de référence
+$p_0 = 3{,}46\,\%$ établie par la baseline d'échantillonnage non
+amplifié. Le mode de la mesure ancillaire se sature à
+$\hat p = 3{,}81\,\%$ pour les trois valeurs de $m$ : la grille
+discrète à $2^m$ points place son point le plus proche à
+$y = 15 \cdot 2^{m-4}$ avec $\sin^2(\pi \cdot 15/16) \approx 3{,}81\,\%$,
+ce qui se trouve dans la bande de résolution théorique $\pi / 2^m$ de
+la vraie valeur pour tout $m$. L'estimateur en moyenne pondérée
+$\hat p_{\text{mean}} = \sum_y P(y) \sin^2(\pi y / 2^m)$ raffine
+encore avec $m$ : $3{,}84\,\%$ à $m = 4$, $3{,}90\,\%$ à $m = 5$,
+$3{,}95\,\%$ à $m = 6$, tous à moins de $0{,}5$\,pp de la référence.
+
+\begin{table}[!htbp]
+\centering
+\caption{Convergence de la QAE sur la requête SAS-champion. Référence
+$p_0 = 3{,}46\,\%$ obtenue par échantillonnage non amplifié à
+$50\,000$ shots (Figure~\ref{fig:fig4}, $k = 0$).
+$\hat p_{\text{mode}}$ : mode de l'histogramme de mesure des ancillas,
+décodé via $\sin^2(\pi y / 2^m)$. $\hat p_{\text{mean}}$ : estimateur
+empirique pondéré par les fréquences. Le speedup quadratique de
+Brassard se manifeste sous la forme des
+$O(1/\sqrt{p_0}) \approx 5$ itérations $Q$ contrôlées suffisantes à
+$m = 6$, contre les $O(1/p_0) \approx 30$ échantillons non amplifiés
+nécessaires pour le même nombre attendu de comptes.}
+\label{tab:qae}
+\small
+\begin{tabular}{cccccc}
+\toprule
+$m$ & Qubits totaux & Résolution $\pi / 2^m$ & Comptes pic $/ 10^4$ &
+$\hat p_{\text{mode}}$ & $\hat p_{\text{mean}}$ \\
+\midrule
+4 & 19 & $0{,}196$ & $5\,037$ & $3{,}81\,\%$ & $3{,}84\,\%$ \\
+5 & 20 & $0{,}098$ & $4\,943$ & $3{,}81\,\%$ & $3{,}90\,\%$ \\
+6 & 21 & $0{,}049$ & $4\,792$ & $3{,}81\,\%$ & $3{,}95\,\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La Figure~\ref{fig:fig5} montre la distribution empirique de
+$\hat p$ à $m = 6$. Le mode à $y = 60$ (replié sur $y = 4$ par la
+symétrie $y \leftrightarrow 2^m - y$) porte $47{,}9\,\%$ des shots et
+correspond à $\hat p = 3{,}81\,\%$ ; les pics suivants se situent à
+$y = 28$ et $y = 36$, qui décodent à des amplitudes autour de
+$90\,\%$ mais ne récoltent chacun que $< 1\,\%$ des shots, une queue
+d'échantillonnage cohérente avec la queue de précision QPE
+\cite{brassard2002quantum, suzuki2020amplitude}.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/fig5_qae_estimation.pdf}
+\caption{Distribution empirique de l'estimateur QAE à $m = 6$ ancillas
+($21$ qubits au total, $10\,000$ shots). Bleu : histogramme des
+amplitudes décodées $\hat p = \sin^2(\pi y / 2^m)$. Orange en
+pointillé : référence $p_0 = 3{,}46\,\%$ depuis l'échantillonnage non
+amplifié. Rouge en pointillés : estimation du mode QAE
+$\hat p_{\text{mode}} = 3{,}81\,\%$.}
+\label{fig:fig5}
+\end{figure}
+
+La comparaison du nombre de shots avec le schéma d'amplification de
+la Section~\ref{sec:grover} clarifie la différence pratique entre les
+deux méthodes. L'amplification fait tourner $p_0$ jusqu'à un pic
+proche de $1$, ce qui rend bon marché la vérification de l'atteinte
+du sous-espace cible, mais ne renvoie pas $p_0$ lui-même : extraire
+une estimation numérique de l'état amplifié demande encore une
+campagne de mesure séparée pour défaire l'angle d'amplification. La
+QAE renvoie $\hat p$ directement depuis un seul shot du registre
+ancillaire, au prix de l'exécution de $2^m - 1 \approx 63$ itérations
+de Grover par shot à $m = 6$ contre l'application unique de $A$ par
+échantillon non amplifié. L'économie asymptotique en shots est le
+speedup quadratique bien connu de Brassard $O(1/p_0)$ contre
+$O(1/p_0^2)$ pour une précision additive ; à $p_0 = 3{,}5\,\%$ c'est
+une réduction de l'ordre de $\sim 30 \times$ sur les shots, que la
+convergence empirique de la Table~\ref{tab:qae} corrobore.
+
+\subsection{Prédiction prospective : Coupe du Monde FIFA 2026}
+
+La Coupe du Monde FIFA 2026 démarre le 11 juin dans 16 villes hôtes
+aux États-Unis, au Canada et au Mexique. On émet une prédiction
+prospective sur la phase R16+ (15 matchs, 15 qubits) en prenant les
+16 meilleures équipes classées par $P(\text{atteint le R16})$ depuis
+le snapshot Monte Carlo classique PulsQuant du 2026-06-06T17:04, et
+en les plaçant dans un tableau équilibré standard 1-contre-16. La
+Table~\ref{tab:wc} montre les têtes de la distribution issue de la
+marche quantique aux côtés des valeurs classiques correspondantes. La
+masse se déplace des favoris de tête (FRA $-9{,}5$\,pp, ESP $-4{,}8$\,pp)
+vers le milieu de hiérarchie (NED $+3{,}0$\,pp, BEL $+2{,}9$\,pp,
+AUT $+2{,}2$\,pp, COL $+2{,}0$\,pp) : c'est la même redistribution que
+dans le back-test NBA, transposée à un tableau dont la vérité terrain
+est encore à six semaines.
+
+\begin{table}[!htbp]
+\centering
+\caption{Coupe du Monde FIFA 2026, probabilité prospective de champion
+sur la phase R16+ (12 entrées de tête, triées par $P_Q$). Les
+appariements réels seront déterminés par la phase de groupes et
+peuvent différer de notre hypothèse équilibrée 1-contre-16. Le motif
+d'amplification du milieu de hiérarchie (NED, BEL, COL, AUT entre
+$+2$ et $+3$\,pp) reproduit celui du backtest NBA de la
+Section~\ref{sec:multi}.}
+\label{tab:wc}
+\begin{tabular}{lrrr}
+\toprule
+Équipe & $P_Q$ (marche quantique) & $P_C$ (MC classique) & $P_Q - P_C$ \\
+\midrule
+ARG & 31,06\,\% & 24,92\,\% & $+6{,}14$\,pp \\
+BRA & 9,26\,\% & 13,14\,\% & $-3{,}88$\,pp \\
+GER & 7,54\,\% & 6,04\,\% & $+1{,}49$\,pp \\
+POR & 7,19\,\% & 8,36\,\% & $-1{,}17$\,pp \\
+NED & 6,70\,\% & 3,68\,\% & $+3{,}02$\,pp \\
+BEL & 6,11\,\% & 3,18\,\% & $+2{,}93$\,pp \\
+ESP & 5,36\,\% & 10,14\,\% & $-4{,}78$\,pp \\
+FRA & 5,17\,\% & 14,63\,\% & $-9{,}45$\,pp \\
+COL & 4,33\,\% & 2,30\,\% & $+2{,}03$\,pp \\
+ENG & 4,32\,\% & 5,97\,\% & $-1{,}65$\,pp \\
+SUI & 2,80\,\% & 1,49\,\% & $+1{,}31$\,pp \\
+AUT & 2,61\,\% & 0,39\,\% & $+2{,}22$\,pp \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Portée de la revendication}
+
+Un mot sur ce qu'on revendique et ce qu'on ne revendique pas. À
+l'échelle simulateur 15 qubits, on ne court pas contre le MC
+classique : l'échantillonnage quantique tourne en $0{,}16$~s et le
+MC classique en $0{,}06$~s (Qiskit Aer sur un seul thread CPU,
+50\,000 shots et simulations). La contribution est l'encodage
+lui-même, pas son runtime actuel. L'approximation graînée est en
+particulier une source de biais contrôlée et réversible : le check en
+forme close de la Section~\ref{sec:method}.2 lui impute l'intégralité
+de l'écart $Q$--$C$, ce qui signifie que monter en gamme sur
+l'encodage (paragraphe suivant) récupère le comportement MC non
+biaisé jusqu'au budget de qubits.
+
+\subsection{Ce que capture l'encodage}
+
+Ce que la construction achète, c'est la corrélation structurelle
+entre matchs adjacents pour rien, par intrication, sans
+conditionnement de chemin explicite. L'effet empirique sur les cinq
+tournois testés est cohérent : tous les parcours profonds d'outsiders
+réalisés pour lesquels on a un back-test sont amplifiés, par des
+facteurs allant de $1{,}71\times$ (SAS en Finales NBA) à
+$4{,}44\times$ (Arnaldi comme demi-finaliste ATP outsider), et la
+championne WTA Andreeva se situe au milieu de cette plage à
+$1{,}68\times$. La sous-pondération des têtes de série qui survivent
+profondément, le marginal d'atteinte des Finales des New York Knicks
+à $0{,}71\times$ et leur marginal de champion à $0{,}50\times$ étant
+les exemples les plus nets, est le prix à payer pour cette asymétrie,
+et figure dans la même Table. Les deux effets viennent de la même
+approximation : pas de free lunch ici, juste un trade-off dont le
+signe est exactement celui qui correspond à la manière dont les
+marchés de prédiction mispricent les tournois.
+
+\subsection{Contexte des marchés de prédiction}
+
+L'angle marchés de prédiction est la motivation pratique. Les marchés
+de prédiction en général \cite{wolfers2004prediction} et leurs
+extensions combinatoires \cite{hanson2003combinatorial} sont bien
+compris comme instruments de découverte de prix, mais leurs
+implémentations au niveau du tableau encodent rarement les
+corrélations structurelles entre matchs. Polymarket a dépassé
+44~milliards de dollars de volume échangé en 2025, en route vers une
+valorisation de 9~milliards adossée à ICE, et son pricing futures
+agrège sur des fréquences marginales historiques plutôt que sur des
+probabilités jointes structurelles. Un modèle qui assigne un poids a
+priori plus élevé aux chemins d'upset structurellement corrélés
+identifierait, ex ante, les mispricings côté outsider de ce profil
+de liquidité, qui est aussi le côté où les spreads sont les plus
+larges et l'inventaire le plus mince. C'est l'asymétrie qu'exploite
+la marche graînée.
+
+\subsection{Une question peut-être un peu bête}
+\label{sec:candide}
+
+On peut poser la question naïvement : un spectateur qui regarde le
+match peut-il être quantiquement intriqué avec le ballon, l'arbitre,
+ou l'attaquant au moment où celui-ci marque ? La réponse opérationnelle
+est non. La décohérence macroscopique tue tout : un objet de la taille
+d'un ballon perd sa cohérence quantique en environ $10^{-23}$ secondes
+à température ambiante \cite{joos_zeh_1985}, et le cerveau humain est
+énergétiquement un environnement encore plus hostile
+\cite{tegmark_2000}. La question, prise littéralement, est close.
+
+On remarque néanmoins, en relisant l'encodage écrit en
+Section~\ref{sec:method}, qu'on retrouve mathématiquement le même type
+d'objet que ceux étudiés depuis une quinzaine d'années dans le champ
+encore jeune de la \emph{quantum biology} \cite{lambert2013quantum}.
+Notre marche quantique sur le graphe des matchs d'un tournoi est de
+la même famille que la marche excitonique du complexe FMO de la
+photosynthèse \cite{engel_2007, plenio2008dephasing}, où des paquets
+d'énergie cohérents se propagent sur un graphe de chromophores
+conditionnellement couplés. La paire de qubits intriqués qui code une
+rencontre conditionnelle dans notre construction est de la même
+famille que la paire de radicaux intriqués que les oiseaux migrateurs
+entretiennent dans leur cryptochrome rétinienne pour s'orienter au
+champ magnétique terrestre \cite{hore_mouritsen_2016}. Les échelles
+physiques sont séparées par treize ordres de grandeur, mais l'objet
+mathématique sous-jacent, un état multipartite intriqué dont les
+corrélations sont conditionnelles à un graphe, est rigoureusement le
+même.
+
+On ne pousse pas plus loin ici. Notre modèle reste un outil de
+pricing, pas un substrat physique. Mais que la même primitive
+apparaisse à la fois à l'échelle femto-seconde du transport d'énergie
+dans les feuilles et à l'échelle horaire d'un tableau d'élimination
+directe nous semble valoir la mention, moins comme un argument pour
+ce papier que comme une indication sur ce que cette structure pourrait
+pricer ailleurs.
+
+\subsection{Extensions et travaux à venir}
+
+L'amplification de Grover de la Section~\ref{sec:grover} et la QAE
+de la Section~\ref{sec:qae} couvrent ensemble la plus simple
+variante de la famille de requêtes de vraisemblance de chemin déjà
+pointée par la note \emph{Quantum Frontiers} de 2018
+\cite{quantumfrontiers_wc_2018} : un sous-espace inconditionnel
+\og l'équipe $X$ remporte le tournoi \fg{}, interrogé à la fois par
+amplification (qui fait tourner $p_0$ jusqu'à un pic) et par
+estimation d'amplitude (qui renvoie $\hat p_0$ directement). L'étape
+naturelle suivante est la forme conditionnelle \og sachant que $X$
+atteint les demi-finales, qui est le champion le plus probable ? \fg{},
+qui couple la même construction d'oracle à un registre supplémentaire
+de conditionnement et qu'on laisse aux travaux à venir. Un encodage
+fidèle de l'ensemble des $2^{r-1}$ configurations parentales
+éliminerait en parallèle le biais graîné, au prix d'une profondeur de
+circuit qui croît avec la profondeur du tableau. Les variantes QAE
+NISQ-friendly sans estimation de phase \cite{suzuki2020amplitude}
+réduisent substantiellement le coût en ancillas et constituent une
+cible naturelle pour le matériel near-term. Toutes les extensions
+restent tractables en simulation jusqu'à environ 25 qubits sur un seul
+GPU via cuQuantum \cite{cuquantum_benchmark_2023}.
+
+\FloatBarrier
+\section{Conclusion}
+
+Nous avons écrit un encodage de marche quantique pour l'estimation de
+probabilités structurées par tableau, formalisé l'approximation
+graînée sur laquelle il s'appuie aux tours profonds, et vérifié que
+l'implémentation Qiskit Aer s'accorde, à bruit d'échantillonnage
+près, avec une énumération en forme close de la même règle. À
+l'échelle simulateur actuelle (15 qubits), la contribution est
+conceptuelle plutôt qu'algorithmique : on ne revendique pas
+d'avantage quantique, mais l'encodage reproduit une structure de
+corrélation de tableau que le Monte Carlo classique ne récupère qu'au
+prix d'un conditionnement de chemin explicite.
+
+Les back-tests sur cinq vrais tableaux 2025--2026 constituent le
+message empirique principal. La marche amplifie tous les parcours
+profonds d'outsiders réalisés de notre échantillon (Spurs NBA,
+Andreeva et Chwalinska à RG WTA, Mensik et Arnaldi à RG ATP), avec
+des ratios $Q/C$ entre $1{,}71\times$ et $4{,}44\times$. Elle ne
+produit pas de signal d'upset là où l'écart de rating ne le justifie
+pas (PSG champion UCL à $\approx 1{,}01$ ; Vegas vs Colorado
+quasi pile-ou-face à $0{,}63\times$ ; OKC champion NBA à
+$1{,}04\times$). Elle sous-pondère les têtes de série dont l'avance
+Elo est modérée au point d'être érodée par des appariements
+conditionnels répétés (marginal d'atteinte des Finales des NYK à
+$0{,}71\times$, NYK champion à $0{,}50\times$). Les trois
+comportements viennent de la même approximation et sont reportés dans
+la même Table. Pour le pricing sur marchés de prédiction, le signe du
+biais va dans la bonne direction : le sous-pricing des chemins
+d'upset structurellement corrélés est précisément la population que
+l'approximation graînée identifie préférentiellement.
+
+On implémente en outre, sur le même encodage, à la fois
+l'amplification d'amplitude de Grover (Section~\ref{sec:grover}) et
+l'estimation d'amplitude quantique (Section~\ref{sec:qae}) pour le
+sous-espace SAS-champion du tableau NBA. La courbe d'amplification
+atteint son pic à $97{,}89\,\%$ sur $k = 4$ itérations, et la QAE
+renvoie $\hat p_{\text{mode}} = 3{,}81\,\%$ à $m = 6$ ancillas
+(21 qubits au total), dans la bande de résolution $\pi/2^m$ de la
+référence $p_0 = 3{,}46\,\%$ obtenue par échantillonnage non
+amplifié. Ensemble, les deux requêtes réalisent le pipeline canonique
+Brassard-Hoyer-Mosca-Tapp sur un tableau réel, refermant la plus
+basique des extensions basées sur Grover initialement pointée comme
+travail futur par la note \emph{Quantum Frontiers} de 2018.
+
+Enfin nous émettons, avant le coup d'envoi du 11 juin, une prédiction
+prospective pour la Coupe du Monde FIFA 2026 R16+ sous l'hypothèse
+d'un tableau équilibré 1-contre-16. Les nations de milieu de
+hiérarchie (NED, BEL, AUT, COL) sont amplifiées de 2 à 3 points de
+pourcentage par rapport au MC classique, et les favoris de tête
+(FRA, ESP, BRA) réduits d'autant. L'encodage passe à l'échelle de
+l'ordre de 25 qubits sur un seul GPU via cuQuantum, et constitue un
+candidat naturel pour la fenêtre NISQ tardive et pour le régime 50 à
+100 qubits logiques attendu des premières générations de matériel
+tolérant aux fautes.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

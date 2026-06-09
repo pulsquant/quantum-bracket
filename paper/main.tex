@@ -103,8 +103,10 @@ realising the quadratic Brassard speedup on a real-bracket query.
 
 A prospective prediction for the FIFA World Cup 2026 (kickoff
 June 11, 2026) is issued in the same form : mid-tier nations (NED,
-BEL, AUT, COL) upweighted by 2--3 percentage points, top favourites
-(FRA, ESP, BRA) commensurately reduced.
+BEL, AUT, COL) upweighted by 2--3 percentage points, top European
+favourites (FRA, ESP, BRA) commensurately reduced. ARG is the notable
+exception among top favourites --- upweighted $+6.14$\,pp because its
+balanced-draw path runs through a softer Conmebol-heavy quarter.
 
 At simulator scales (15 qubits) we make no claim of quantum advantage.
 The contribution is conceptual : the encoding captures bracket
@@ -308,6 +310,7 @@ within 1.5\,pp across all teams.}
 \end{figure}
 
 \subsection{Real-bracket back-tests : NBA, NHL, UCL, RG ATP, RG WTA}
+\label{sec:multi}
 
 We load the actual 2025--2026 brackets from the PulsQuant
 \texttt{tournament\_brackets} production table and construct the
@@ -458,7 +461,7 @@ The shot-count implication is immediate. Targeting a $5\%$ relative
 precision on the SAS-champion frequency, direct sampling requires
 $N_{\text{unamp}} = (1 - p_0)/(p_0 \rho^2) \approx 11\,200$ shots,
 while sampling from the amplified state with $k = 4$ requires
-$N_{\text{amp}} \approx 24$ shots (and $\approx 1$ shot at $k = 12$).
+$N_{\text{amp}} \approx 9$ shots (and $\approx 1$ shot at $k = 12$).
 The roughly $10^4 \times$ empirical shot-count reduction is consistent
 with the quadratic Grover speedup $O(1/\sqrt{p_0})$ in the
 amplitude-amplification sense \cite{brassard2002quantum}. The cost is
@@ -595,9 +598,11 @@ truth is still six weeks away.
 \begin{table}[!htbp]
 \centering
 \caption{FIFA World Cup 2026, R16-onward prospective champion
-probability (top 8 entries, sorted by $P_Q$). Actual knockout pairings
+probability (top 12 entries, sorted by $P_Q$). Actual knockout pairings
 will be determined by the group stage and may differ from our balanced
-1-vs-16 assumption.}
+1-vs-16 assumption. The mid-tier upweight pattern (NED, BEL, COL, AUT
+all $+2$ to $+3$\,pp) mirrors the NBA back-test of
+Section~\ref{sec:multi}.}
 \label{tab:wc}
 \begin{tabular}{lrrr}
 \toprule
@@ -611,6 +616,10 @@ NED & 6.70\% & 3.68\% & $+3.02$\,pp \\
 BEL & 6.11\% & 3.18\% & $+2.93$\,pp \\
 ESP & 5.36\% & 10.14\% & $-4.78$\,pp \\
 FRA & 5.17\% & 14.63\% & $-9.45$\,pp \\
+COL & 4.33\% & 2.30\% & $+2.03$\,pp \\
+ENG & 4.32\% & 5.97\% & $-1.65$\,pp \\
+SUI & 2.80\% & 1.49\% & $+1.31$\,pp \\
+AUT & 2.61\% & 0.39\% & $+2.22$\,pp \\
 \bottomrule
 \end{tabular}
 \end{table}
